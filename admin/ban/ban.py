@@ -71,7 +71,7 @@ async def user_id_to_ban_unban(update: Update, context: ContextTypes.DEFAULT_TYP
         else:
             user_id = int(update.effective_message.text)
 
-        user = models.User.get_user(user_id=user_id)
+        user = models.User.get_users(user_id=user_id)
         if not user:
             await update.message.reply_text(
                 text="لم يتم العثور على المستخدم، تأكد من الآيدي ❌",

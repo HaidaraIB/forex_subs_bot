@@ -45,7 +45,7 @@ async def remove_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def choose_admin_id_to_remove(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
         admin_id = int(update.callback_query.data)
-        if admin_id == int(os.getenv("OWNER_ID")):
+        if admin_id == OWNER_ID:
             await update.callback_query.answer(
                 text="لا يمكنك إزالة مالك البوت من قائمة الآدمنز❗️",
                 show_alert=True,

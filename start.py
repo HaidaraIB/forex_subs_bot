@@ -1,9 +1,9 @@
 from telegram import Update, Chat, BotCommandScopeChat
 from telegram.ext import CommandHandler, ContextTypes, Application, ConversationHandler
-import os
 import models
 from custom_filters import Admin
 from common.decorators import check_if_user_banned_dec, add_new_user_dec
+from common.constants import *
 from common.common import (
     build_user_keyboard,
     build_admin_keyboard,
@@ -12,7 +12,7 @@ from common.common import (
 
 
 async def inits(app: Application):
-    await models.Admin.add_new_admin(admin_id=int(os.getenv("OWNER_ID")))
+    await models.Admin.add_new_admin(admin_id=OWNER_ID)
 
 
 async def set_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -29,13 +29,17 @@ async def set_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @check_if_user_banned_dec
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE:
+
         await set_commands(update, context)
+
+        if context.user_data.get("free_used") is None:
+            context.user_data["free_used"] = False
+
         await update.message.reply_text(
             text="أهلاً بك...",
-            reply_markup=build_user_keyboard(),
+            reply_markup=build_user_keyboard(context.user_data["free_used"]),
         )
         return ConversationHandler.END
-
 
 async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):

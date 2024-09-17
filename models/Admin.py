@@ -1,15 +1,5 @@
-from sqlalchemy import (
-    Column,
-    Integer,
-    select,
-    insert,
-    delete,
-)
-from models.DB import (
-    Base,
-    connect_and_close,
-    lock_and_release,
-)
+from sqlalchemy import Column, Integer, select, insert, delete
+from models.DB import Base, connect_and_close, lock_and_release
 from sqlalchemy.orm import Session
 
 

@@ -1,16 +1,8 @@
-from telegram import (
-    Chat,
-    Update,
-    InlineKeyboardMarkup,
-)
-from telegram.ext import (
-    ContextTypes,
-    CallbackQueryHandler,
-)
-
+from telegram import Chat, Update, InlineKeyboardMarkup
+from telegram.ext import ContextTypes, CallbackQueryHandler
+from common.constants import *
 from common.common import build_admin_keyboard
 from admin.admin_settings.common import admin_settings_keyboard
-import os
 from custom_filters import Admin
 import models
 
@@ -27,7 +19,7 @@ async def show_admins(update: Update, context: ContextTypes.DEFAULT_TYPE):
     admins = models.Admin.get_admin_ids()
     text = "آيديات الآدمنز الحاليين:\n\n"
     for admin in admins:
-        if admin.id == int(os.getenv("OWNER_ID")):
+        if admin.id == OWNER_ID:
             text += "<code>" + str(admin.id) + "</code>" + " <b>مالك البوت</b>\n"
             continue
         text += "<code>" + str(admin.id) + "</code>" + "\n"

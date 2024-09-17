@@ -1,9 +1,4 @@
-from telegram import (
-    Chat,
-    Update,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-)
+from telegram import Chat, Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ContextTypes,
     ConversationHandler,
@@ -11,18 +6,13 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
-
-from common.common import (
-    build_admin_keyboard,
-)
-
+from common.common import build_admin_keyboard, build_back_button
+from admin.broadcast.common import broadcast_keyboard
 from common.back_to_home_page import (
     back_to_admin_home_page_handler,
     back_to_admin_home_page_button,
 )
-
 from start import start_command, admin_command
-
 import models
 import asyncio
 from custom_filters import Admin
@@ -46,26 +36,9 @@ async def broadcast_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def the_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
         context.user_data["the message"] = update.message.text
-        admin_settings_keyboard = [
-            [
-                InlineKeyboardButton(
-                    text="جميع المستخدمين👥", callback_data="all users"
-                ),
-                InlineKeyboardButton(
-                    text="مستخدمين محددين👤", callback_data="specific users"
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="الرجوع🔙",
-                    callback_data="back to the message",
-                )
-            ],
-            back_to_admin_home_page_button[0],
-        ]
         await update.message.reply_text(
             text="هل تريد إرسال الرسالة إلى:",
-            reply_markup=InlineKeyboardMarkup(admin_settings_keyboard),
+            reply_markup=InlineKeyboardMarkup(broadcast_keyboard),
         )
         return SEND_TO
 
@@ -73,21 +46,13 @@ async def the_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 back_to_the_message = broadcast_message
 
 
-async def send_to_all(context: ContextTypes.DEFAULT_TYPE):
-    all_users = models.User.get_all_users()
-    text = context.user_data["the message"] + "\n\n<b>🚩🚩🚩 هذه الرسالة من آدمن البوت 🚩🚩🚩</b>"
-    for user in all_users:
-        try:
-            await context.bot.send_message(chat_id=user.id, text=text)
-        except:
-            pass
-
-
-async def send_to_some(users: list, context: ContextTypes.DEFAULT_TYPE):
+async def send_to_(users: list[models.User], context: ContextTypes.DEFAULT_TYPE):
     text = context.user_data["the message"]
     for user in users:
         try:
-            await context.bot.send_message(chat_id=user, text=text)
+            await context.bot.send_message(
+                chat_id=user.id if isinstance(user, models.User) else user, text=text
+            )
         except:
             pass
 
@@ -95,15 +60,13 @@ async def send_to_some(users: list, context: ContextTypes.DEFAULT_TYPE):
 async def send_to(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
         if update.callback_query.data == "all users":
-            asyncio.create_task(send_to_all(context=context))
+            users = models.User.get_users()
 
-            keyboard = build_admin_keyboard()
-            await update.callback_query.edit_message_text(
-                text="يقوم البوت بإرسال الرسائل الآن، يمكنك متابعة استخدامه بشكل طبيعي.",
-                reply_markup=keyboard,
-            )
+        elif update.callback_query.data == "subsicribers":
+            users = models.User.get_users(subsicribers=True)
 
-            return ConversationHandler.END
+        elif update.callback_query.data == "none subsicribers":
+            users = models.User.get_users(subsicribers=False)
 
         elif update.callback_query.data == "specific users":
             context.user_data["specific users"] = []
@@ -113,11 +76,7 @@ async def send_to(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         text="تم الانتهاء👍", callback_data="done entering users"
                     )
                 ],
-                [
-                    InlineKeyboardButton(
-                        text="الرجوع🔙", callback_data="back to send to"
-                    )
-                ],
+                build_back_button("back to send to"),
                 back_to_admin_home_page_button[0],
             ]
             await update.callback_query.edit_message_text(
@@ -126,29 +85,22 @@ async def send_to(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return ENTER_USERS
 
+        asyncio.create_task(send_to_(users=users, context=context))
+
+        keyboard = build_admin_keyboard()
+        await update.callback_query.edit_message_text(
+            text="يقوم البوت بإرسال الرسائل الآن، يمكنك متابعة استخدامه بشكل طبيعي.",
+            reply_markup=keyboard,
+        )
+
+        return ConversationHandler.END
+
 
 async def back_to_send_to(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
-        admin_settings_keyboard = [
-            [
-                InlineKeyboardButton(
-                    text="جميع المستخدمين👥", callback_data="all users"
-                ),
-                InlineKeyboardButton(
-                    text="مستخدمين محددين👤", callback_data="specific users"
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="الرجوع🔙",
-                    callback_data="back to the message",
-                )
-            ],
-            back_to_admin_home_page_button[0],
-        ]
         await update.callback_query.edit_message_text(
             text="هل تريد إرسال الرسالة إلى:",
-            reply_markup=InlineKeyboardMarkup(admin_settings_keyboard),
+            reply_markup=InlineKeyboardMarkup(broadcast_keyboard),
         )
         return SEND_TO
 
@@ -169,27 +121,40 @@ async def done_entering_users(update: Update, context: ContextTypes.DEFAULT_TYPE
             reply_markup=keyboard,
         )
         asyncio.create_task(
-            send_to_some(users=context.user_data["specific users"], contkuext=context)
+            send_to_(users=context.user_data["specific users"], context=context)
         )
         return ConversationHandler.END
 
 
 broadcast_message_handler = ConversationHandler(
-    entry_points=[CallbackQueryHandler(broadcast_message, "^broadcast$")],
+    entry_points=[
+        CallbackQueryHandler(
+            broadcast_message,
+            "^broadcast$",
+        )
+    ],
     states={
         THE_MESSAGE: [
             MessageHandler(
-                filters=filters.TEXT & ~filters.COMMAND, callback=the_message
+                filters=filters.TEXT & ~filters.COMMAND,
+                callback=the_message,
             )
         ],
         SEND_TO: [
             CallbackQueryHandler(
-                callback=send_to, pattern="^all users$|^specific users$"
+                callback=send_to,
+                pattern="^((all)|(specific)) users$|^(none )?subsicribers$",
             )
         ],
         ENTER_USERS: [
-            CallbackQueryHandler(done_entering_users, "^done entering users$"),
-            MessageHandler(filters=filters.Regex("^\d+$"), callback=enter_users),
+            CallbackQueryHandler(
+                done_entering_users,
+                "^done entering users$",
+            ),
+            MessageHandler(
+                filters=filters.Regex("^\d+$"),
+                callback=enter_users,
+            ),
         ],
     },
     fallbacks=[
