@@ -19,10 +19,7 @@ from start import start_command
 from datetime import datetime, timedelta
 
 
-(
-    CHOOSE_PERIOD,
-    GET_CODE,
-) = range(2)
+GET_CODE = 0
 
 
 async def check_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -48,35 +45,11 @@ async def check_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        keyboard = [
-            *periods_keyboard,
-            back_to_user_home_page_button[0],
-        ]
-        await update.callback_query.edit_message_text(
-            text="اختر الاشتراك",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-        )
-        return CHOOSE_PERIOD
-
-
-async def choose_period(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_chat.type == Chat.PRIVATE:
-        back_buttons = [
-            build_back_button("back_to_choose_period"),
-            back_to_user_home_page_button[0],
-        ]
-        if not update.callback_query.data.startswith("back"):
-            context.user_data["chosen_period"] = update.callback_query.data.split("_")[
-                0
-            ]
         await update.callback_query.edit_message_text(
             text="أرسل الكود",
-            reply_markup=InlineKeyboardMarkup(back_buttons),
+            reply_markup=InlineKeyboardMarkup(back_to_user_home_page_button),
         )
         return GET_CODE
-
-
-back_to_choose_period = check_code
 
 
 async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -85,6 +58,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             build_back_button("back_to_get_code"),
             back_to_user_home_page_button[0],
         ]
+
         sent_code = re.sub("[^\w\s]", "", update.effective_message.text)
         code = models.Code.get_by(code=sent_code)
         if not code:
@@ -100,7 +74,8 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        period = context.user_data["chosen_period"]
+        period = code.period
+
         sat_sun_text = (
             "نظراً لأن السوق لا يزال مغلقاً فلن يتم إحتساب اليوم من ضمن فترة الإشتراك.\n\n"
             "سيتم حساب مدة الإشتراك بدايةً من يوم الإثنين.\n\n"
@@ -118,10 +93,6 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "<b>سيتم تذكيرك قبل 3 أيام من نهاية اشتراكك، مرة كل 12 ساعة.</b>\n\n"
             "<b>لن تستطيع إرسال كود جديد حتى يتبقى على نهاية اشتراكك 3 أيام أو أقل.</b>\n\n"
         )
-        link = await context.bot.create_chat_invite_link(
-            chat_id=PRIVATE_CHANNEL_ID, member_limit=1
-        )
-
         now = datetime.now(TIMEZONE).replace(microsecond=0)
         weekday = now.weekday()
         if weekday not in [5, 6] and now.hour < 19:
@@ -136,22 +107,6 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += after_7_text
         ends_at = starts_at + timedelta(days=int(period))
 
-        await models.Code.use(
-            code=code.code,
-            user_id=update.effective_user.id,
-            starts_at=starts_at,
-            ends_at=ends_at,
-        )
-        await models.InviteLink.add(
-            link=link.invite_link,
-            code=code.code,
-            user_id=update.effective_user.id,
-        )
-        await models.User.add_sub(
-            user_id=update.effective_user.id,
-            sub=code.code,
-        )
-
         jobs = context.job_queue.get_jobs_by_name(name=str(update.effective_user.id))
         if jobs:
             diff = jobs[0].next_t - datetime.now(TIMEZONE)
@@ -160,6 +115,26 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if days <= 3:
                 ends_at += jobs[0].next_t - timedelta(days=2)
                 jobs[0].schedule_removal()
+        else:
+            link = await context.bot.create_chat_invite_link(
+                chat_id=PRIVATE_CHANNEL_ID, member_limit=1
+            )
+            await models.InviteLink.add(
+                link=link.invite_link,
+                code=code.code,
+                user_id=update.effective_user.id,
+            )
+
+        await models.Code.use(
+            code=code.code,
+            user_id=update.effective_user.id,
+            starts_at=starts_at,
+            ends_at=ends_at,
+        )
+        await models.User.add_sub(
+            user_id=update.effective_user.id,
+            sub=code.code,
+        )
 
         context.job_queue.run_once(
             kick_user,
@@ -167,9 +142,6 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_id=update.effective_user.id,
             chat_id=PRIVATE_CHANNEL_ID,
             name=str(update.effective_user.id),
-            data={
-                "invite_link": link.invite_link,
-            },
             job_kwargs={
                 "id": str(update.effective_user.id),
                 "misfire_grace_time": None,
@@ -182,29 +154,30 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_id=update.effective_user.id,
             chat_id=PRIVATE_CHANNEL_ID,
             name=f"remind {update.effective_user.id}",
-            data={
-                "invite_link": link.invite_link,
-            },
             job_kwargs={
                 "id": f"remind {update.effective_user.id}",
                 "misfire_grace_time": None,
                 "coalesce": True,
             },
         )
-        await update.message.reply_text(
-            text=text,
-            reply_markup=InlineKeyboardMarkup.from_button(
-                InlineKeyboardButton(
-                    text="انضم الآن",
-                    url=link.invite_link,
-                )
-            ),
-            disable_web_page_preview=True,
-        )
+        if jobs:
+            await update.message.reply_text(
+                text=text,
+                disable_web_page_preview=True,
+            )
+        else:
+            await update.message.reply_text(
+                text=text,
+                reply_markup=InlineKeyboardMarkup.from_button(
+                    InlineKeyboardButton(
+                        text="انضم الآن",
+                        url=link.invite_link,
+                    )
+                ),
+                disable_web_page_preview=True,
+            )
         return ConversationHandler.END
 
-
-back_to_get_code = choose_period
 
 check_code_handler = ConversationHandler(
     entry_points=[
@@ -214,12 +187,6 @@ check_code_handler = ConversationHandler(
         )
     ],
     states={
-        CHOOSE_PERIOD: [
-            CallbackQueryHandler(
-                choose_period,
-                "^\d+_period$",
-            ),
-        ],
         GET_CODE: [
             MessageHandler(
                 filters=filters.TEXT & ~filters.COMMAND,
@@ -230,7 +197,5 @@ check_code_handler = ConversationHandler(
     fallbacks=[
         start_command,
         back_to_user_home_page_handler,
-        CallbackQueryHandler(back_to_choose_period, "^back_to_choose_period$"),
-        CallbackQueryHandler(back_to_get_code, "^back_to_get_code$"),
     ],
 )

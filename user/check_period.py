@@ -38,7 +38,7 @@ async def check_period(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         else:
             await update.callback_query.answer(
-                "ليس لديك اشتراكات!",
+                "ليس لديك اشتراكات ❗️",
                 show_alert=True,
             )
 

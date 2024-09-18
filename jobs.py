@@ -1,9 +1,11 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from common.constants import STORE_LINK
+import models
 
 
 async def kick_user(context: ContextTypes.DEFAULT_TYPE):
+    await models.User.add_sub(user_id=context.job.user_id, sub=None)
     await context.bot.unban_chat_member(
         chat_id=context.job.chat_id, user_id=context.job.user_id
     )

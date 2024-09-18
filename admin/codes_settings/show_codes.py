@@ -15,7 +15,7 @@ async def show_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = models.Code.get_by(used=True if used == "YES" else False)
 
         if not res:
-            await update.callback_query.answer(f"ليس لديك أكواد {used_dict[used]}!")
+            await update.callback_query.answer(f"ليس لديك أكواد {used_dict[used]} ❗️")
             return
 
         try:

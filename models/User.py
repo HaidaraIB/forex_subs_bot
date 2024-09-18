@@ -37,7 +37,7 @@ class User(BaseUser):
             try:
                 return res.fetchone().t[0]
             except:
-                pass
+                return
         elif subsicribers is not None:
             res = s.execute(
                 select(cls).where(
@@ -47,7 +47,7 @@ class User(BaseUser):
             try:
                 return list(map(lambda x: x[0], res.tuples().all()))
             except:
-                pass
+                return
 
         res = s.execute(select(cls))
         try:
