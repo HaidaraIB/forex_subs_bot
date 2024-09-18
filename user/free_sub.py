@@ -69,9 +69,7 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_id=update.effective_user.id,
             chat_id=PRIVATE_CHANNEL_ID,
             name=str(update.effective_user.id),
-            data={
-                "invite_link": link.invite_link,
-            },
+            data=link.invite_link,
             job_kwargs={
                 "id": str(update.effective_user.id),
                 "misfire_grace_time": None,
@@ -84,15 +82,14 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_id=update.effective_user.id,
             chat_id=PRIVATE_CHANNEL_ID,
             name=f"remind {update.effective_user.id}",
-            data={
-                "invite_link": link.invite_link,
-            },
+            data=0,
             job_kwargs={
                 "id": f"remind {update.effective_user.id}",
                 "misfire_grace_time": None,
                 "coalesce": True,
             },
         )
+        context.user_data['wanna_reminder'] = True
         await update.callback_query.edit_message_text(
             text=f"اضغط الزر أدناه للانضمام لقناتنا الخاصة",
             reply_markup=InlineKeyboardMarkup.from_button(

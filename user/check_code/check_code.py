@@ -109,6 +109,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         jobs = context.job_queue.get_jobs_by_name(name=str(update.effective_user.id))
         if jobs:
+            link = None
             diff = jobs[0].next_t - datetime.now(TIMEZONE)
             seconds = diff.total_seconds()
             days = int(seconds // (3600 * 24))
@@ -142,6 +143,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user_id=update.effective_user.id,
             chat_id=PRIVATE_CHANNEL_ID,
             name=str(update.effective_user.id),
+            data=getattr(link, "invite_link", None),
             job_kwargs={
                 "id": str(update.effective_user.id),
                 "misfire_grace_time": None,
@@ -153,6 +155,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             when=ends_at - timedelta(days=3),
             user_id=update.effective_user.id,
             chat_id=PRIVATE_CHANNEL_ID,
+            data=0,
             name=f"remind {update.effective_user.id}",
             job_kwargs={
                 "id": f"remind {update.effective_user.id}",
@@ -160,6 +163,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "coalesce": True,
             },
         )
+        context.user_data['wanna_reminder'] = True
         if jobs:
             await update.message.reply_text(
                 text=text,

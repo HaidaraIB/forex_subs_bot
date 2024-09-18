@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from common.constants import STORE_LINK
+from common.constants import STORE_LINK, PRIVATE_CHANNEL_ID
 import models
 
 
@@ -9,10 +9,18 @@ async def kick_user(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.unban_chat_member(
         chat_id=context.job.chat_id, user_id=context.job.user_id
     )
+    if context.job.data:
+        await context.bot.revoke_chat_invite_link(
+            chat_id=PRIVATE_CHANNEL_ID,
+            invite_link=context.job.data,
+        )
 
 
 async def remind_user(context: ContextTypes.DEFAULT_TYPE):
-    if context.application.user_data[context.job.user_id].get("wanna_reminder", True):
+    if (
+        context.application.user_data[context.job.user_id].get("wanna_reminder", True)
+        and context.job.data < 4
+    ):
         await context.bot.send_message(
             chat_id=context.job.user_id,
             text="تذكير: سينتهي اشتراكك خلال ثلاثة أيام",
@@ -35,7 +43,7 @@ async def remind_user(context: ContextTypes.DEFAULT_TYPE):
             user_id=context.job.user_id,
             chat_id=context.job.chat_id,
             name=f"remind {context.job.user_id}",
-            data=context.job.data,
+            data=context.job.data + 1,
             job_kwargs={
                 "id": f"remind {context.job.user_id}",
                 "misfire_grace_time": None,
