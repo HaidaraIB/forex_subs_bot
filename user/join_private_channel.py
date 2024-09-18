@@ -17,7 +17,7 @@ async def join_private_channel(update: Update, context: ContextTypes.DEFAULT_TYP
     if not link:
         return
 
-    await models.InviteLink.use(link=update.chat_member.invite_link.invite_link)
+    await models.InviteLink.use(invite_link=update.chat_member.invite_link.invite_link)
 
     await context.bot.revoke_chat_invite_link(
         chat_id=PRIVATE_CHANNEL_ID,
