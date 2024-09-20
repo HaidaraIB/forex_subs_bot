@@ -1,8 +1,9 @@
-from telegram import Update, Chat
+from telegram import Update, Chat, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, CallbackQueryHandler
 import datetime
 from common.constants import *
 import models
+
 
 def calc_period(seconds: int):
     days = int(seconds // (3600 * 24))
@@ -32,9 +33,14 @@ async def check_period(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     show_alert=True,
                 )
 
-            await update.callback_query.answer(
+            await update.callback_query.edit_message_text(
                 text=calc_period(seconds),
-                show_alert=True,
+                reply_markup=InlineKeyboardMarkup.from_button(
+                    InlineKeyboardButton(
+                        text="رابط المتجر",
+                        url=STORE_LINK,
+                    )
+                ),
             )
         else:
             await update.callback_query.answer(
