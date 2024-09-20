@@ -59,6 +59,6 @@ class InviteLink(Base):
         invite_link: str,
         s: Session = None,
     ):
-        s.query(cls).filter_by(invite_link=invite_link).update(
+        s.query(cls).filter_by(link=invite_link).update(
             {cls.used: True, cls.use_date: datetime.now(TIMEZONE)}
         )
