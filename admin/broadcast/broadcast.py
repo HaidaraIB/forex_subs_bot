@@ -143,7 +143,10 @@ broadcast_message_handler = ConversationHandler(
     states={
         THE_MESSAGE: [
             MessageHandler(
-                filters=filters.TEXT & ~filters.COMMAND,
+                filters=(filters.TEXT & ~filters.COMMAND)
+                | filters.PHOTO
+                | filters.VIDEO
+                | filters.AUDIO,
                 callback=get_message,
             )
         ],

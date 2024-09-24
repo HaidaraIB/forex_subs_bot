@@ -46,6 +46,12 @@ async def send_to(users: list[models.User], context: ContextTypes.DEFAULT_TYPE):
                     video=msg.video,
                     caption=msg.caption,
                 )
+            elif msg.audio:
+                await context.bot.send_audio(
+                    chat_id=user.id if isinstance(user, models.User) else user,
+                    audio=msg.audio,
+                    caption=msg.caption,
+                )
             else:
                 await context.bot.send_message(
                     chat_id=user.id if isinstance(user, models.User) else user,
