@@ -1,4 +1,4 @@
-from telegram import Chat, Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Chat, Update, InlineKeyboardButton, InlineKeyboardMarkup, error
 from telegram.ext import (
     ContextTypes,
     ConversationHandler,
@@ -7,7 +7,7 @@ from telegram.ext import (
     filters,
 )
 from common.common import build_admin_keyboard, build_back_button
-from admin.broadcast.common import broadcast_keyboard
+from admin.broadcast.common import broadcast_keyboard, send_to, build_done_button
 from common.back_to_home_page import (
     back_to_admin_home_page_handler,
     back_to_admin_home_page_button,
@@ -33,31 +33,26 @@ async def broadcast_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return THE_MESSAGE
 
 
-async def the_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def get_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
-        context.user_data["the message"] = update.message.text
-        await update.message.reply_text(
-            text="هل تريد إرسال الرسالة إلى:",
-            reply_markup=InlineKeyboardMarkup(broadcast_keyboard),
-        )
+        if update.message:
+            context.user_data["the message"] = update.message
+            await update.message.reply_text(
+                text="هل تريد إرسال الرسالة إلى:",
+                reply_markup=InlineKeyboardMarkup(broadcast_keyboard),
+            )
+        else:
+            await update.callback_query.edit_message_text(
+                text="هل تريد إرسال الرسالة إلى:",
+                reply_markup=InlineKeyboardMarkup(broadcast_keyboard),
+            )
         return SEND_TO
 
 
 back_to_the_message = broadcast_message
 
 
-async def send_to_(users: list[models.User], context: ContextTypes.DEFAULT_TYPE):
-    text = context.user_data["the message"]
-    for user in users:
-        try:
-            await context.bot.send_message(
-                chat_id=user.id if isinstance(user, models.User) else user, text=text
-            )
-        except:
-            pass
-
-
-async def send_to(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def choose_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
         if update.callback_query.data == "all users":
             users = models.User.get_users()
@@ -69,11 +64,12 @@ async def send_to(update: Update, context: ContextTypes.DEFAULT_TYPE):
             users = models.User.get_users(subsicribers=False)
 
         elif update.callback_query.data == "specific users":
-            context.user_data["specific users"] = []
+            context.user_data["specific users"] = set()
             done_button = [
                 [
                     InlineKeyboardButton(
-                        text="تم الانتهاء👍", callback_data="done entering users"
+                        text="تم الانتهاء👍",
+                        callback_data="done entering users",
                     )
                 ],
                 build_back_button("back to send to"),
@@ -85,7 +81,7 @@ async def send_to(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return ENTER_USERS
 
-        asyncio.create_task(send_to_(users=users, context=context))
+        asyncio.create_task(send_to(users=users, context=context))
 
         keyboard = build_admin_keyboard()
         await update.callback_query.edit_message_text(
@@ -96,21 +92,32 @@ async def send_to(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
 
 
-async def back_to_send_to(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
-        await update.callback_query.edit_message_text(
-            text="هل تريد إرسال الرسالة إلى:",
-            reply_markup=InlineKeyboardMarkup(broadcast_keyboard),
-        )
-        return SEND_TO
+back_to_send_to = get_message
 
 
 async def enter_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
-        if update.message.text.isnumeric():
-            context.user_data["specific users"].append(int(update.message.text))
-        else:
-            await update.message.reply_text(text="الرجاء إرسال id.")
+        user_id = int(update.message.text)
+        punch_line = "تابع مع باقي الآيديات واضغط تم الانتهاء عند الانتهاء."
+
+        try:
+            await context.bot.get_chat(chat_id=user_id)
+        except error.TelegramError:
+            await update.message.reply_text(
+                text=(
+                    "لم يتم العثور على المستخدم، ربما لم يبدأ محادثة مع البوت بعد ❗️\n"
+                    + punch_line
+                ),
+                reply_markup=build_done_button(),
+            )
+            return
+
+        context.user_data["specific users"].add(user_id)
+        await update.message.reply_text(
+            text="تم العثور على المستخدم ✅\n" + punch_line,
+            reply_markup=build_done_button(),
+        )
+        return ENTER_USERS
 
 
 async def done_entering_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -121,7 +128,7 @@ async def done_entering_users(update: Update, context: ContextTypes.DEFAULT_TYPE
             reply_markup=keyboard,
         )
         asyncio.create_task(
-            send_to_(users=context.user_data["specific users"], context=context)
+            send_to(users=context.user_data["specific users"], context=context)
         )
         return ConversationHandler.END
 
@@ -137,12 +144,12 @@ broadcast_message_handler = ConversationHandler(
         THE_MESSAGE: [
             MessageHandler(
                 filters=filters.TEXT & ~filters.COMMAND,
-                callback=the_message,
+                callback=get_message,
             )
         ],
         SEND_TO: [
             CallbackQueryHandler(
-                callback=send_to,
+                callback=choose_users,
                 pattern="^((all)|(specific)) users$|^(none )?subsicribers$",
             )
         ],
