@@ -98,6 +98,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if weekday not in [5, 6] and now.hour < 19:
             starts_at = now
         elif weekday in [5, 6] and now.hour >= 19:
+            starts_at = now + timedelta(days=8 - weekday)
             text += after_7_text + "———-\n\n" + sat_sun_text
         elif weekday in [5, 6]:
             starts_at = now + timedelta(days=7 - weekday)
@@ -114,7 +115,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             seconds = diff.total_seconds()
             days = int(seconds // (3600 * 24))
             if days <= 3:
-                ends_at += jobs[0].next_t - timedelta(days=2)
+                ends_at = ends_at + jobs[0].next_t - timedelta(days=2)
                 jobs[0].schedule_removal()
         else:
             link = await context.bot.create_chat_invite_link(
@@ -163,7 +164,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "coalesce": True,
             },
         )
-        context.user_data['wanna_reminder'] = True
+        context.user_data["wanna_reminder"] = True
         if jobs:
             await update.message.reply_text(
                 text=text,
