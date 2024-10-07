@@ -114,11 +114,13 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             diff = jobs[0].next_t - datetime.now(TIMEZONE)
             seconds = diff.total_seconds()
             days = int(seconds // (3600 * 24))
-            if days <= 3:
-                remind_jobs = context.job_queue.get_jobs_by_name(
-                    name=f"remind {update.effective_user.id}"
-                )
+
+            remind_jobs = context.job_queue.get_jobs_by_name(
+                name=f"remind {update.effective_user.id}"
+            )
+            if remind_jobs:
                 remind_jobs[0].schedule_removal()
+            if days <= 3:
                 ends_at += diff - timedelta(days=2)
                 jobs[0].schedule_removal()
         else:
