@@ -115,7 +115,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             seconds = diff.total_seconds()
             days = int(seconds // (3600 * 24))
             if days <= 3:
-                ends_at = ends_at + jobs[0].next_t - timedelta(days=2)
+                ends_at += diff - timedelta(days=2)
                 jobs[0].schedule_removal()
         else:
             link = await context.bot.create_chat_invite_link(
