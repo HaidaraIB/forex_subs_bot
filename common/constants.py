@@ -4,7 +4,7 @@ BACK_TO_HOME_PAGE_TEXT = "العودة إلى القائمة الرئيسية�
 
 HOME_PAGE_TEXT = "القائمة الرئيسية 🔝"
 
-FREE_SUB_PERIOD = 7
+FREE_SUB_PERIOD = 3
 
 STORE_LINK = "https://salla.sa/elitemt5/aeVXABv"
 
