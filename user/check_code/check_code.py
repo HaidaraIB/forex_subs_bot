@@ -6,6 +6,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+from telegram.constants import ChatMemberStatus
 from common.common import build_back_button, build_periods_keyboard
 from common.constants import *
 from common.back_to_home_page import (
@@ -87,7 +88,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "وعسى الله يوفقكم..🤍\n\n"
         )
         text = (
-            "تم تفعيل العضوية بقناة صفقات النخبة الخاصة\n\n"
+            "تم {} العضوية بقناة صفقات النخبة الخاصة\n\n"
             f"مدة الاشتراك: <code>{period}</code> أيام\n\n"
             "ملاحظات:\n\n"
             "<b>سيتم تذكيرك قبل 3 أيام من نهاية اشتراكك، مرة كل 12 ساعة.</b>\n\n"
@@ -110,20 +111,25 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         jobs = context.job_queue.get_jobs_by_name(name=str(update.effective_user.id))
         if jobs:
-            link = None
             diff = jobs[0].next_t - datetime.now(TIMEZONE)
             seconds = diff.total_seconds()
             days = int(seconds // (3600 * 24))
+            if days <= 3:
+                ends_at += diff - timedelta(days=2)
+                jobs[0].schedule_removal()
 
             remind_jobs = context.job_queue.get_jobs_by_name(
                 name=f"remind {update.effective_user.id}"
             )
             if remind_jobs:
                 remind_jobs[0].schedule_removal()
-            if days <= 3:
-                ends_at += diff - timedelta(days=2)
-                jobs[0].schedule_removal()
-        else:
+
+        member = await context.bot.get_chat_member(
+            chat_id=PRIVATE_CHANNEL_ID,
+            user_id=update.effective_user.id,
+        )
+
+        if member.status == ChatMemberStatus.LEFT:
             link = await context.bot.create_chat_invite_link(
                 chat_id=PRIVATE_CHANNEL_ID, member_limit=1
             )
@@ -132,6 +138,8 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 code=code.code,
                 user_id=update.effective_user.id,
             )
+        else:
+            link = None
 
         await models.Code.use(
             code=code.code,
@@ -171,20 +179,20 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             },
         )
         context.user_data["wanna_reminder"] = True
-        if jobs:
+        if link:
             await update.message.reply_text(
-                text=text,
-                disable_web_page_preview=True,
-            )
-        else:
-            await update.message.reply_text(
-                text=text,
+                text=text.format("تفعيل"),
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
                         text="انضم الآن",
                         url=link.invite_link,
                     )
                 ),
+                disable_web_page_preview=True,
+            )
+        else:
+            await update.message.reply_text(
+                text=text.format("تجديد"),
                 disable_web_page_preview=True,
             )
         return ConversationHandler.END
