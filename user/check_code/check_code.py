@@ -5,6 +5,7 @@ from telegram.ext import (
     CallbackQueryHandler,
     MessageHandler,
     filters,
+    Job,
 )
 from telegram.constants import ChatMemberStatus
 from common.common import build_back_button, build_periods_keyboard
@@ -25,7 +26,9 @@ GET_CODE = 0
 
 async def check_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE:
-        jobs = context.job_queue.get_jobs_by_name(name=str(update.effective_user.id))
+        jobs = context.job_queue.get_jobs_by_name(
+            name=f"{update.effective_user.id} {PRIVATE_CHANNEL_IDS[0]}"
+        )
         if jobs:
             diff = jobs[0].next_t - datetime.now(TIMEZONE)
             seconds = diff.total_seconds()
@@ -70,7 +73,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         elif code.user_id:
             await update.message.reply_text(
-                text="هذا الكود مستخدم من قبل.",
+                text="هذا الكود مستخدم من قبل ❗️",
                 reply_markup=InlineKeyboardMarkup(back_buttons),
             )
             return
@@ -88,7 +91,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "وعسى الله يوفقكم..🤍\n\n"
         )
         text = (
-            "تم {} العضوية بقناة صفقات النخبة الخاصة\n\n"
+            "تم {} العضوية بقناة صفقات النخبة الخاصة: <code>{}</code>\n\n"
             f"مدة الاشتراك: <code>{period}</code> أيام\n\n"
             "ملاحظات:\n\n"
             "<b>سيتم تذكيرك قبل 3 أيام من نهاية اشتراكك، مرة كل 12 ساعة.</b>\n\n"
@@ -109,37 +112,66 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += after_7_text
         ends_at = starts_at + timedelta(days=int(period))
 
-        jobs = context.job_queue.get_jobs_by_name(name=str(update.effective_user.id))
-        if jobs:
-            diff = jobs[0].next_t - datetime.now(TIMEZONE)
-            seconds = diff.total_seconds()
-            days = int(seconds // (3600 * 24))
-            if days <= 3:
-                ends_at += diff - timedelta(days=2)
-                jobs[0].schedule_removal()
-
-            remind_jobs = context.job_queue.get_jobs_by_name(
-                name=f"remind {update.effective_user.id}"
+        for PRIVATE_CHANNEL_ID in PRIVATE_CHANNEL_IDS:
+            jobs = context.job_queue.get_jobs_by_name(
+                name=f"{update.effective_user.id} {PRIVATE_CHANNEL_ID}"
             )
-            if remind_jobs:
-                remind_jobs[0].schedule_removal()
+            if not jobs:
+                jobs = context.job_queue.get_jobs_by_name(
+                    name=f"{update.effective_user.id} {PRIVATE_CHANNEL_ID}"
+                )
+            if jobs:
+                ends_at += reschedule_kick_user(jobs[0])
 
-        member = await context.bot.get_chat_member(
-            chat_id=PRIVATE_CHANNEL_ID,
-            user_id=update.effective_user.id,
-        )
-
-        if member.status == ChatMemberStatus.LEFT:
-            link = await context.bot.create_chat_invite_link(
-                chat_id=PRIVATE_CHANNEL_ID, member_limit=1
-            )
-            await models.InviteLink.add(
-                link=link.invite_link,
-                code=code.code,
+            member = await context.bot.get_chat_member(
+                chat_id=PRIVATE_CHANNEL_ID,
                 user_id=update.effective_user.id,
             )
-        else:
-            link = None
+
+            if member.status == ChatMemberStatus.LEFT:
+                link = await context.bot.create_chat_invite_link(
+                    chat_id=PRIVATE_CHANNEL_ID,
+                    member_limit=1,
+                )
+                await models.InviteLink.add(
+                    link=link.invite_link,
+                    code=code.code,
+                    user_id=update.effective_user.id,
+                    chat_id=PRIVATE_CHANNEL_ID,
+                )
+            else:
+                link = None
+
+            context.job_queue.run_once(
+                kick_user,
+                when=ends_at + timedelta(days=2),
+                user_id=update.effective_user.id,
+                chat_id=PRIVATE_CHANNEL_ID,
+                name=f"{update.effective_user.id} {PRIVATE_CHANNEL_ID}",
+                data=getattr(link, "invite_link", None),
+                job_kwargs={
+                    "id": f"{update.effective_user.id} {PRIVATE_CHANNEL_ID}",
+                    "misfire_grace_time": None,
+                    "coalesce": True,
+                },
+            )
+            chat = await context.bot.get_chat(chat_id=PRIVATE_CHANNEL_ID)
+            if link:
+                await update.message.reply_text(
+                    text=text.format("تفعيل", chat.title),
+                    reply_markup=InlineKeyboardMarkup.from_button(
+                        InlineKeyboardButton(
+                            text="انضم الآن",
+                            url=link.invite_link,
+                        )
+                    ),
+                    disable_web_page_preview=True,
+                )
+            else:
+                await update.message.reply_text(
+                    text=text.format("تجديد", chat.title),
+                    disable_web_page_preview=True,
+                )
 
         await models.Code.use(
             code=code.code,
@@ -152,24 +184,15 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             sub=code.code,
         )
 
-        context.job_queue.run_once(
-            kick_user,
-            when=ends_at + timedelta(days=2),
-            user_id=update.effective_user.id,
-            chat_id=PRIVATE_CHANNEL_ID,
-            name=str(update.effective_user.id),
-            data=getattr(link, "invite_link", None),
-            job_kwargs={
-                "id": str(update.effective_user.id),
-                "misfire_grace_time": None,
-                "coalesce": True,
-            },
+        remind_jobs = context.job_queue.get_jobs_by_name(
+            name=f"remind {update.effective_user.id}"
         )
+        if remind_jobs:
+            remind_jobs[0].schedule_removal()
         context.job_queue.run_once(
             remind_user,
             when=ends_at - timedelta(days=3),
             user_id=update.effective_user.id,
-            chat_id=PRIVATE_CHANNEL_ID,
             data=0,
             name=f"remind {update.effective_user.id}",
             job_kwargs={
@@ -178,24 +201,24 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "coalesce": True,
             },
         )
-        context.user_data["wanna_reminder"] = True
-        if link:
-            await update.message.reply_text(
-                text=text.format("تفعيل"),
-                reply_markup=InlineKeyboardMarkup.from_button(
-                    InlineKeyboardButton(
-                        text="انضم الآن",
-                        url=link.invite_link,
-                    )
-                ),
-                disable_web_page_preview=True,
-            )
-        else:
-            await update.message.reply_text(
-                text=text.format("تجديد"),
-                disable_web_page_preview=True,
-            )
+        if context.user_data.get("wanna_reminder", None) == None:
+            context.user_data["wanna_reminder"] = True
         return ConversationHandler.END
+
+
+back_to_get_code = check_code
+
+
+def reschedule_kick_user(job: Job):
+    ends_at = 0
+    diff = job.next_t - datetime.now(TIMEZONE)
+    seconds = diff.total_seconds()
+    days = int(seconds // (3600 * 24))
+    if days <= 3:
+        ends_at = diff - timedelta(days=2)
+        job.schedule_removal()
+
+    return ends_at
 
 
 check_code_handler = ConversationHandler(
@@ -216,5 +239,6 @@ check_code_handler = ConversationHandler(
     fallbacks=[
         start_command,
         back_to_user_home_page_handler,
+        CallbackQueryHandler(back_to_get_code, "^back_to_get_code$"),
     ],
 )

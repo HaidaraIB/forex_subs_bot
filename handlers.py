@@ -23,6 +23,7 @@ from admin.broadcast import *
 from admin.ban import *
 from admin.statistics import *
 from admin.codes_settings import *
+from admin.clear_free_sub import *
 
 from models import create_tables
 
@@ -56,6 +57,8 @@ def main():
     app.add_handler(add_codes_handler)
     app.add_handler(show_used_codes_handler)
     app.add_handler(show_unused_codes_handler)
+
+    app.add_handler(clear_free_sub_handler)
 
     # USER
     app.add_handler(stop_reminder_handler)

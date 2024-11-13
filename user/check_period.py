@@ -21,12 +21,11 @@ def calc_period(seconds: int):
 
 async def check_period(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE:
-        jobs = context.job_queue.get_jobs_by_name(name=str(update.effective_user.id))
+        jobs = context.job_queue.get_jobs_by_name(name=f"{update.effective_user.id} {PRIVATE_CHANNEL_IDS[0]}")
         if jobs:
             job = jobs[0]
             diff = job.next_t - datetime.datetime.now(TIMEZONE)
             seconds = diff.total_seconds() - (2 * 24 * 60 * 60)
-            user = models.User.get_users(user_id=update.effective_user.id)
             if seconds <= 0:
                 await update.callback_query.answer(
                     f"اشتراكك منتهي، لديك {calc_period(abs(seconds))} مهلة قبل أن يتم إخراجك من القناة",

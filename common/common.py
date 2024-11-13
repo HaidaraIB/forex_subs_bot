@@ -76,7 +76,11 @@ def build_admin_keyboard():
             InlineKeyboardButton(
                 text="إضافة أكواد",
                 callback_data="add codes",
-            )
+            ),
+            InlineKeyboardButton(
+                text="تصفير التجربة المجانية",
+                callback_data="clear free sub",
+            ),
         ],
         [
             InlineKeyboardButton(

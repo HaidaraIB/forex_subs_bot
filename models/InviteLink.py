@@ -3,22 +3,33 @@ from models.DB import Base, connect_and_close, lock_and_release
 from sqlalchemy.orm import Session
 from datetime import datetime
 from common.constants import *
+
+
 class InviteLink(Base):
     __tablename__ = "invite_links"
     link = Column(String, primary_key=True)
     used = Column(Boolean, default=False)
     code = Column(String)
     user_id = Column(Integer)
+    chat_id = Column(Integer, server_default="-1002392883539")
     use_date = Column(TIMESTAMP)
 
     @classmethod
     @lock_and_release
-    async def add(cls, link: str, code: str, user_id: int, s: Session = None):
+    async def add(
+        cls,
+        link: str,
+        code: str,
+        user_id: int,
+        chat_id: int,
+        s: Session = None,
+    ):
         s.execute(
             insert(cls).values(
                 link=link,
                 code=code,
                 user_id=user_id,
+                chat_id=chat_id,
             )
         )
 

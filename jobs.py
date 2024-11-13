@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
-from common.constants import STORE_LINK, PRIVATE_CHANNEL_ID
+from common.constants import STORE_LINK
 import models
 
 
@@ -11,7 +11,7 @@ async def kick_user(context: ContextTypes.DEFAULT_TYPE):
     )
     if context.job.data:
         await context.bot.revoke_chat_invite_link(
-            chat_id=PRIVATE_CHANNEL_ID,
+            chat_id=context.job.chat_id,
             invite_link=context.job.data,
         )
 
@@ -41,7 +41,6 @@ async def remind_user(context: ContextTypes.DEFAULT_TYPE):
             remind_user,
             when=12 * 60 * 60,
             user_id=context.job.user_id,
-            chat_id=context.job.chat_id,
             name=f"remind {context.job.user_id}",
             data=context.job.data + 1,
             job_kwargs={

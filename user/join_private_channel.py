@@ -1,13 +1,13 @@
 from telegram import Update
 from telegram.ext import ContextTypes, ChatMemberHandler
 import models
-from common.constants import *
+from common.constants import PRIVATE_CHANNEL_IDS
 
 
 async def join_private_channel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if (
-        update.chat_member.chat.id != PRIVATE_CHANNEL_ID
+        update.chat_member.chat.id not in [PRIVATE_CHANNEL_IDS]
         or not update.chat_member.invite_link
     ):
         return
@@ -20,7 +20,7 @@ async def join_private_channel(update: Update, context: ContextTypes.DEFAULT_TYP
     await models.InviteLink.use(invite_link=update.chat_member.invite_link.invite_link)
 
     await context.bot.revoke_chat_invite_link(
-        chat_id=PRIVATE_CHANNEL_ID,
+        chat_id=update.chat_member.chat.id,
         invite_link=update.chat_member.invite_link.invite_link,
     )
 
