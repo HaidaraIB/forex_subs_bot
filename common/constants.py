@@ -6,7 +6,7 @@ HOME_PAGE_TEXT = "القائمة الرئيسية 🔝"
 
 FREE_SUB_PERIOD = 3
 
-STORE_LINK = "https://salla.sa/elitemt5/aeVXABv"
+STORE_LINK = "https://elitemt5.com/ydlWjxD"
 
 PRIVATE_CHANNEL_IDS = [
     -1002392883539,
