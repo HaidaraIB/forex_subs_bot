@@ -29,6 +29,10 @@ async def check_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         jobs = context.job_queue.get_jobs_by_name(
             name=f"{update.effective_user.id} {PRIVATE_CHANNEL_IDS[0]}"
         )
+        if not jobs:
+            jobs = context.job_queue.get_jobs_by_name(
+                name=f"{update.effective_user.id}"
+            )
         if jobs:
             diff = jobs[0].next_t - datetime.now(TIMEZONE)
             seconds = diff.total_seconds()
@@ -118,7 +122,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             if not jobs:
                 jobs = context.job_queue.get_jobs_by_name(
-                    name=f"{update.effective_user.id} {PRIVATE_CHANNEL_ID}"
+                    name=f"{update.effective_user.id}"
                 )
             if jobs:
                 ends_at += reschedule_kick_user(jobs[0])
