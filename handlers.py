@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import CallbackQueryHandler, InvalidCallbackData
 from start import start_command, admin_command
+from jobs import send_invite_links
 from common.common import invalid_callback_data, create_folders
 
 from common.back_to_home_page import (
@@ -73,6 +74,11 @@ def main():
     app.add_handler(hide_ids_keyboard_handler)
     app.add_handler(back_to_user_home_page_handler)
     app.add_handler(back_to_admin_home_page_handler)
+
+    app.job_queue.run_once(
+        callback=send_invite_links,
+        when=10,
+    )
 
     app.add_error_handler(error_handler)
 
