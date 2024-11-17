@@ -75,11 +75,6 @@ def main():
     app.add_handler(back_to_user_home_page_handler)
     app.add_handler(back_to_admin_home_page_handler)
 
-    app.job_queue.run_once(
-        callback=send_invite_links,
-        when=10,
-    )
-
     app.add_error_handler(error_handler)
 
     app.run_polling(allowed_updates=Update.ALL_TYPES)
