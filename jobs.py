@@ -106,21 +106,24 @@ async def send_invite_links(context: ContextTypes.DEFAULT_TYPE):
                     "coalesce": True,
                 },
             )
-            await context.bot.send_message(
-                chat_id=user.id,
-                text=(
-                    "السلام عليكم ورحمة الله وبركاته\n\n"
-                    "لجميع المشتركين سوينا لكم قناة ثانية بنفس الاشتراك\n\n"
-                    "القناة الثانية رح تكون لصفقات نواف وفريق ايليت\n"
-                    "والقناة الأولى رح تستمر على نفس وضعها الحالي\n\n\n"
-                    "يعني قناتين بإشتراك واحد‼️\n\n\n"
-                    "انضموا للقناة الآن"
-                ),
-                reply_markup=InlineKeyboardMarkup.from_button(
-                    InlineKeyboardButton(
-                        text="انضم الآن",
-                        url=link.invite_link,
-                    )
-                ),
-                disable_web_page_preview=True,
-            )
+            try:
+                await context.bot.send_message(
+                    chat_id=user.id,
+                    text=(
+                        "السلام عليكم ورحمة الله وبركاته\n\n"
+                        "لجميع المشتركين سوينا لكم قناة ثانية بنفس الاشتراك\n\n"
+                        "القناة الثانية رح تكون لصفقات نواف وفريق ايليت\n"
+                        "والقناة الأولى رح تستمر على نفس وضعها الحالي\n\n\n"
+                        "يعني قناتين بإشتراك واحد‼️\n\n\n"
+                        "انضموا للقناة الآن"
+                    ),
+                    reply_markup=InlineKeyboardMarkup.from_button(
+                        InlineKeyboardButton(
+                            text="انضم الآن",
+                            url=link.invite_link,
+                        )
+                    ),
+                    disable_web_page_preview=True,
+                )
+            except:
+                pass
