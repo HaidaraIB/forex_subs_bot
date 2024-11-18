@@ -44,7 +44,8 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 await asyncio.sleep(r.retry_after)
                 link = await context.bot.create_chat_invite_link(
-                    chat_id=PRIVATE_CHANNEL_ID, member_limit=1,
+                    chat_id=PRIVATE_CHANNEL_ID,
+                    member_limit=1,
                 )
             await models.InviteLink.add(
                 link=link.invite_link,
@@ -80,7 +81,8 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "coalesce": True,
                 },
             )
-            await update.callback_query.edit_message_text(
+            await context.bot.send_message(
+                chat_id=update.effective_user.id,
                 text=f"اضغط الزر أدناه للانضمام لقناتنا الخاصة <code>{chat.title}</code>",
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
@@ -103,8 +105,8 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "coalesce": True,
                 },
             )
-            if context.user_data.get('wanna_reminder', None) == None:
-                context.user_data['wanna_reminder'] = True
+            if context.user_data.get("wanna_reminder", None) == None:
+                context.user_data["wanna_reminder"] = True
             context.user_data["free_used"] = True
         except UnboundLocalError:
             await update.callback_query.answer()
