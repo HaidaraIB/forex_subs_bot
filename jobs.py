@@ -1,8 +1,27 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, error
 from telegram.ext import ContextTypes
-from common.constants import STORE_LINK, PRIVATE_CHANNEL_IDS
+from common.constants import *
 import models
 import asyncio
+
+
+async def kick_all_free(context: ContextTypes.DEFAULT_TYPE):
+    users = models.User.get_users(free_sub=True)
+    for user in users:
+        for ch_id in PRIVATE_CHANNEL_IDS:
+            jobs = context.job_queue.get_jobs_by_name(name=f"{user.id} {ch_id}")
+            if not jobs:
+                await models.User.add_sub(user_id=user.id, sub=None)
+                await context.bot.unban_chat_member(chat_id=ch_id, user_id=user.id)
+            links = models.InviteLink.get_by(user_id=user.id)
+            for link in links:
+                try:
+                    await context.bot.revoke_chat_invite_link(
+                        chat_id=link.chat_id,
+                        invite_link=link.link,
+                    )
+                except error.BadRequest:
+                    pass
 
 
 async def kick_user(context: ContextTypes.DEFAULT_TYPE):
@@ -22,34 +41,37 @@ async def remind_user(context: ContextTypes.DEFAULT_TYPE):
         context.application.user_data[context.job.user_id].get("wanna_reminder", True)
         and context.job.data < 4
     ):
-        await context.bot.send_message(
-            chat_id=context.job.user_id,
-            text="تذكير: سينتهي اشتراكك خلال ثلاثة أيام",
-            reply_markup=InlineKeyboardMarkup.from_row(
-                [
-                    InlineKeyboardButton(
-                        text="رابط المتجر",
-                        url=STORE_LINK,
-                    ),
-                    InlineKeyboardButton(
-                        text="إيقاف التذكير",
-                        callback_data="stop_reminder",
-                    ),
-                ]
-            ),
-        )
-        context.job_queue.run_once(
-            remind_user,
-            when=12 * 60 * 60,
-            user_id=context.job.user_id,
-            name=f"remind {context.job.user_id}",
-            data=context.job.data + 1,
-            job_kwargs={
-                "id": f"remind {context.job.user_id}",
-                "misfire_grace_time": None,
-                "coalesce": True,
-            },
-        )
+        try:
+            await context.bot.send_message(
+                chat_id=context.job.user_id,
+                text="تذكير: سينتهي اشتراكك خلال ثلاثة أيام",
+                reply_markup=InlineKeyboardMarkup.from_row(
+                    [
+                        InlineKeyboardButton(
+                            text="رابط المتجر",
+                            url=STORE_LINK,
+                        ),
+                        InlineKeyboardButton(
+                            text="إيقاف التذكير",
+                            callback_data="stop_reminder",
+                        ),
+                    ]
+                ),
+            )
+            context.job_queue.run_once(
+                remind_user,
+                when=12 * 60 * 60,
+                user_id=context.job.user_id,
+                name=f"remind {context.job.user_id}",
+                data=context.job.data + 1,
+                job_kwargs={
+                    "id": f"remind {context.job.user_id}",
+                    "misfire_grace_time": None,
+                    "coalesce": True,
+                },
+            )
+        except error.BadRequest:
+            pass
 
 
 async def send_invite_links(context: ContextTypes.DEFAULT_TYPE):
