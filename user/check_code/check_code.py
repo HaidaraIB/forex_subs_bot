@@ -125,7 +125,9 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     name=f"{update.effective_user.id}"
                 )
             if jobs:
-                ends_at += reschedule_kick_user(jobs[0])
+                res = reschedule_kick_user(jobs[0])
+                if res:
+                    ends_at += res
 
             member = await context.bot.get_chat_member(
                 chat_id=PRIVATE_CHANNEL_ID,

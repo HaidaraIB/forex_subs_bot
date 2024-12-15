@@ -1,4 +1,4 @@
-from telegram import Update
+from telegram import Update, error
 from telegram.ext import ContextTypes, ChatMemberHandler
 import models
 from common.constants import PRIVATE_CHANNEL_IDS
@@ -18,11 +18,13 @@ async def join_private_channel(update: Update, context: ContextTypes.DEFAULT_TYP
         return
 
     await models.InviteLink.use(invite_link=update.chat_member.invite_link.invite_link)
-
-    await context.bot.revoke_chat_invite_link(
-        chat_id=update.chat_member.chat.id,
-        invite_link=update.chat_member.invite_link.invite_link,
-    )
+    try:
+        await context.bot.revoke_chat_invite_link(
+            chat_id=update.chat_member.chat.id,
+            invite_link=update.chat_member.invite_link.invite_link,
+        )
+    except error.BadRequest:
+        pass
 
 
 join_private_channel_handler = ChatMemberHandler(

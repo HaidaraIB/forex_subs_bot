@@ -85,6 +85,7 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "id": f"{update.effective_user.id} {PRIVATE_CHANNEL_ID}",
                     "misfire_grace_time": None,
                     "coalesce": True,
+                    "replace_existing": True,
                 },
             )
             await context.bot.send_message(

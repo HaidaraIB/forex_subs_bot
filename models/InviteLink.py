@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Boolean, String, TIMESTAMP, Integer, select, insert
+from sqlalchemy import Column, Boolean, String, TIMESTAMP, Integer, select, insert, func
 from models.DB import Base, connect_and_close, lock_and_release
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -13,6 +13,7 @@ class InviteLink(Base):
     user_id = Column(Integer)
     chat_id = Column(Integer, server_default="-1002392883539")
     use_date = Column(TIMESTAMP)
+    created_at = Column(TIMESTAMP, server_default=str(datetime.now(TIMEZONE)))
 
     @classmethod
     @lock_and_release
@@ -40,6 +41,7 @@ class InviteLink(Base):
         code: str = None,
         link: str = None,
         used: bool = None,
+        user_id: int = None,
         s: Session = None,
     ):
         if code:
@@ -62,6 +64,12 @@ class InviteLink(Base):
                 return list(map(lambda x: x[0], res.tuples().all()))
             except:
                 pass
+        elif user_id:
+            res = s.execute(select(cls).where(cls.user_id == user_id))
+            try:
+                return list(map(lambda x: x[0], res.tuples().all()))
+            except:
+                pass
 
     @classmethod
     @lock_and_release
@@ -71,5 +79,8 @@ class InviteLink(Base):
         s: Session = None,
     ):
         s.query(cls).filter_by(link=invite_link).update(
-            {cls.used: True, cls.use_date: datetime.now(TIMEZONE)}
+            {
+                cls.used: True,
+                cls.use_date: datetime.now(TIMEZONE),
+            }
         )

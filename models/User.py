@@ -30,6 +30,7 @@ class User(BaseUser):
         cls,
         user_id: int = None,
         subsicribers: bool = None,
+        free_sub: bool = None,
         s: Session = None,
     ):
         if user_id:
@@ -44,6 +45,12 @@ class User(BaseUser):
                     (cls.cur_sub != None) if subsicribers else (cls.cur_sub == None)
                 )
             )
+            try:
+                return list(map(lambda x: x[0], res.tuples().all()))
+            except:
+                return
+        elif free_sub is not None:
+            res = s.execute(select(cls).where(cls.cur_sub == "Free"))
             try:
                 return list(map(lambda x: x[0], res.tuples().all()))
             except:
