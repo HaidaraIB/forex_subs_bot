@@ -78,8 +78,8 @@ def build_admin_keyboard():
                 callback_data="add codes",
             ),
             InlineKeyboardButton(
-                text="تصفير التجربة المجانية",
-                callback_data="clear free sub",
+                text="إعدادات التجربة المجانية",
+                callback_data="free sub settings",
             ),
         ],
         [

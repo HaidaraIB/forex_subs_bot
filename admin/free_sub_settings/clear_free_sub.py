@@ -8,7 +8,7 @@ from telegram.ext import (
 )
 from custom_filters import Admin
 
-from admin.clear_free_sub.common import build_clear_free_sub_keyboard
+from admin.free_sub_settings.common import build_clear_free_sub_keyboard
 from common.common import build_back_button, build_admin_keyboard
 from common.back_to_home_page import (
     back_to_admin_home_page_button,

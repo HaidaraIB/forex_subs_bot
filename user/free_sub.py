@@ -15,6 +15,12 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 show_alert=True,
             )
             return
+        elif not context.bot_data.get("free_on", True):
+            await update.callback_query.answer(
+                text="التجربة المجانية متوقفة مؤقتاً ❗️",
+                show_alert=True,
+            )
+            return
         for PRIVATE_CHANNEL_ID in PRIVATE_CHANNEL_IDS:
             chat = await context.bot.get_chat(
                 chat_id=PRIVATE_CHANNEL_ID,
