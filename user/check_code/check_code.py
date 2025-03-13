@@ -67,7 +67,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             back_to_user_home_page_button[0],
         ]
 
-        sent_code = re.sub("[^\w\s]", "", update.effective_message.text)
+        sent_code = re.sub(r"[^\w\s\-+=/:?,.]", "", update.effective_message.text)
         code = models.Code.get_by(code=sent_code)
         if not code:
             await update.message.reply_text(
