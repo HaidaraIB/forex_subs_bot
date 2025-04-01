@@ -25,7 +25,7 @@ from admin.ban import *
 from admin.statistics import *
 from admin.codes_settings import *
 from admin.free_sub_settings import *
-
+from admin.chats_settings import *
 from models import create_tables
 
 from MyApp import MyApp
@@ -42,6 +42,12 @@ def main():
             callback=invalid_callback_data, pattern=InvalidCallbackData
         )
     )
+
+    app.add_handler(show_chats_handler)
+    app.add_handler(delete_chat_handler)
+    app.add_handler(add_chat_handler)
+    app.add_handler(chats_settings_handler)
+
     # ADMIN SETTINGS
     app.add_handler(admin_settings_handler)
     app.add_handler(show_admins_handler)

@@ -1,0 +1,4 @@
+from admin.chats_settings.add_chat import add_chat_handler
+from admin.chats_settings.common import chats_settings_handler
+from admin.chats_settings.delete_chat import delete_chat_handler
+from admin.chats_settings.show_channels import show_chats_handler

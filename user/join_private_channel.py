@@ -1,13 +1,12 @@
 from telegram import Update, error
 from telegram.ext import ContextTypes, ChatMemberHandler
 import models
-from common.constants import PRIVATE_CHANNEL_IDS
 
 
 async def join_private_channel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
+    chats = models.Chat.get()
     if (
-        update.chat_member.chat.id not in [PRIVATE_CHANNEL_IDS]
+        update.chat_member.chat.id not in [chat.chat_id for chat in chats]
         or not update.chat_member.invite_link
     ):
         return

@@ -21,8 +21,9 @@ def calc_period(seconds: int):
 
 async def check_period(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE:
+        chats = models.Chat.get()
         jobs = context.job_queue.get_jobs_by_name(
-            name=f"{update.effective_user.id} {PRIVATE_CHANNEL_IDS[0]}",
+            name=f"{update.effective_user.id} {chats[0].chat_id}",
         )
         if not jobs:
             jobs = context.job_queue.get_jobs_by_name(

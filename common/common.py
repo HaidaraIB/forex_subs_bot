@@ -8,10 +8,12 @@ from telegram import (
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
 )
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, Job
 from telegram.constants import ChatType
 import os
 import uuid
+from common.constants import *
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 
@@ -23,6 +25,18 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
+
+
+def reschedule_kick_user(job: Job):
+    ends_at = 0
+    diff = job.next_t - datetime.now(TIMEZONE)
+    seconds = diff.total_seconds()
+    days = int(seconds // (3600 * 24))
+    if days <= 3:
+        ends_at = diff - timedelta(days=2)
+        job.schedule_removal()
+
+    return ends_at
 
 
 def check_hidden_keyboard(context: ContextTypes.DEFAULT_TYPE):
@@ -70,7 +84,13 @@ def build_admin_keyboard():
             InlineKeyboardButton(
                 text="🎛 إعدادات الآدمن ⚙️",
                 callback_data="admin settings",
-            )
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="📢 إعدادات القنوات ⚙️",
+                callback_data="chats_settings",
+            ),
         ],
         [
             InlineKeyboardButton(

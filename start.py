@@ -32,7 +32,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await set_commands(update, context)
 
-        if context.user_data.get("free_used") is None:
+        if context.user_data.get("free_used", None) == None:
             context.user_data["free_used"] = False
 
         await update.message.reply_text(

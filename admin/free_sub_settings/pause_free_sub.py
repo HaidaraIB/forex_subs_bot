@@ -8,7 +8,7 @@ from common.back_to_home_page import back_to_admin_home_page_button
 
 async def pause_free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
-        if not context.bot_data.get("free_on", False):
+        if context.bot_data.get("free_on", None) == None:
             context.bot_data["free_on"] = True
         context.bot_data["free_on"] = not context.bot_data["free_on"]
         await update.callback_query.answer(

@@ -5,10 +5,13 @@ from telegram.ext import (
     CallbackQueryHandler,
     MessageHandler,
     filters,
-    Job,
 )
 from telegram.constants import ChatMemberStatus
-from common.common import build_back_button, build_periods_keyboard
+from common.common import (
+    build_back_button,
+    build_periods_keyboard,
+    reschedule_kick_user,
+)
 from common.constants import *
 from common.back_to_home_page import (
     back_to_user_home_page_handler,
@@ -26,8 +29,9 @@ GET_CODE = 0
 
 async def check_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE:
+        chats = models.Chat.get()
         jobs = context.job_queue.get_jobs_by_name(
-            name=f"{update.effective_user.id} {PRIVATE_CHANNEL_IDS[0]}"
+            name=f"{update.effective_user.id} {chats[0].chat_id}"
         )
         if not jobs:
             jobs = context.job_queue.get_jobs_by_name(
@@ -116,9 +120,11 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += after_7_text
         ends_at = starts_at + timedelta(days=int(period))
 
-        for PRIVATE_CHANNEL_ID in PRIVATE_CHANNEL_IDS:
+        chats = models.Chat.get()
+
+        for chat in chats:
             jobs = context.job_queue.get_jobs_by_name(
-                name=f"{update.effective_user.id} {PRIVATE_CHANNEL_ID}"
+                name=f"{update.effective_user.id} {chat.chat_id}"
             )
             if not jobs:
                 jobs = context.job_queue.get_jobs_by_name(
@@ -130,20 +136,20 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     ends_at += res
 
             member = await context.bot.get_chat_member(
-                chat_id=PRIVATE_CHANNEL_ID,
+                chat_id=chat.chat_id,
                 user_id=update.effective_user.id,
             )
 
             if member.status == ChatMemberStatus.LEFT:
                 link = await context.bot.create_chat_invite_link(
-                    chat_id=PRIVATE_CHANNEL_ID,
+                    chat_id=chat.chat_id,
                     member_limit=1,
                 )
                 await models.InviteLink.add(
                     link=link.invite_link,
                     code=code.code,
                     user_id=update.effective_user.id,
-                    chat_id=PRIVATE_CHANNEL_ID,
+                    chat_id=chat.chat_id,
                 )
             else:
                 link = None
@@ -152,16 +158,16 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 kick_user,
                 when=ends_at + timedelta(days=2),
                 user_id=update.effective_user.id,
-                chat_id=PRIVATE_CHANNEL_ID,
-                name=f"{update.effective_user.id} {PRIVATE_CHANNEL_ID}",
+                chat_id=chat.chat_id,
+                name=f"{update.effective_user.id} {chat.chat_id}",
                 data=getattr(link, "invite_link", None),
                 job_kwargs={
-                    "id": f"{update.effective_user.id} {PRIVATE_CHANNEL_ID}",
+                    "id": f"{update.effective_user.id} {chat.chat_id}",
                     "misfire_grace_time": None,
                     "coalesce": True,
                 },
             )
-            chat = await context.bot.get_chat(chat_id=PRIVATE_CHANNEL_ID)
+            chat = await context.bot.get_chat(chat_id=chat.chat_id)
             if link:
                 await update.message.reply_text(
                     text=text.format("تفعيل", chat.title),
@@ -213,18 +219,6 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 back_to_get_code = check_code
-
-
-def reschedule_kick_user(job: Job):
-    ends_at = 0
-    diff = job.next_t - datetime.now(TIMEZONE)
-    seconds = diff.total_seconds()
-    days = int(seconds // (3600 * 24))
-    if days <= 3:
-        ends_at = diff - timedelta(days=2)
-        job.schedule_removal()
-
-    return ends_at
 
 
 check_code_handler = ConversationHandler(

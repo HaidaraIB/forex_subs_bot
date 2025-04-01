@@ -21,12 +21,13 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 show_alert=True,
             )
             return
-        for PRIVATE_CHANNEL_ID in PRIVATE_CHANNEL_IDS:
+        chats = models.Chat.get()
+        for ch in chats:
             chat = await context.bot.get_chat(
-                chat_id=PRIVATE_CHANNEL_ID,
+                chat_id=ch.chat_id,
             )
             chat_member = await context.bot.get_chat_member(
-                chat_id=PRIVATE_CHANNEL_ID, user_id=update.effective_user.id
+                chat_id=ch.chat_id, user_id=update.effective_user.id
             )
             if chat_member.status in [
                 chat_member.MEMBER,
@@ -41,7 +42,7 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             try:
                 link = await context.bot.create_chat_invite_link(
-                    chat_id=PRIVATE_CHANNEL_ID, member_limit=1
+                    chat_id=ch.chat_id, member_limit=1
                 )
             except error.RetryAfter as r:
                 await update.callback_query.answer(
@@ -50,14 +51,14 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 await asyncio.sleep(r.retry_after)
                 link = await context.bot.create_chat_invite_link(
-                    chat_id=PRIVATE_CHANNEL_ID,
+                    chat_id=ch.chat_id,
                     member_limit=1,
                 )
             await models.InviteLink.add(
                 link=link.invite_link,
                 code="Free",
                 user_id=update.effective_user.id,
-                chat_id=PRIVATE_CHANNEL_ID,
+                chat_id=ch.chat_id,
             )
             await models.User.add_sub(
                 user_id=update.effective_user.id,
@@ -78,11 +79,11 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 kick_user,
                 when=ends_at + timedelta(days=2),
                 user_id=update.effective_user.id,
-                chat_id=PRIVATE_CHANNEL_ID,
-                name=f"{update.effective_user.id} {PRIVATE_CHANNEL_ID}",
+                chat_id=ch.chat_id,
+                name=f"{update.effective_user.id} {ch.chat_id}",
                 data=link.invite_link,
                 job_kwargs={
-                    "id": f"{update.effective_user.id} {PRIVATE_CHANNEL_ID}",
+                    "id": f"{update.effective_user.id} {ch.chat_id}",
                     "misfire_grace_time": None,
                     "coalesce": True,
                     "replace_existing": True,
@@ -112,11 +113,12 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "coalesce": True,
                 },
             )
-            if context.user_data.get("wanna_reminder", None) == None:
-                context.user_data["wanna_reminder"] = True
-            context.user_data["free_used"] = True
         except UnboundLocalError:
             await update.callback_query.answer()
+            
+        if context.user_data.get("wanna_reminder", None) == None:
+            context.user_data["wanna_reminder"] = True
+        context.user_data["free_used"] = True
 
 
 free_sub_handler = CallbackQueryHandler(free_sub, "^try for free$")

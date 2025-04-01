@@ -8,11 +8,18 @@ import asyncio
 async def kick_all_free(context: ContextTypes.DEFAULT_TYPE):
     users = models.User.get_users(free_sub=True)
     for user in users:
-        for ch_id in PRIVATE_CHANNEL_IDS:
-            jobs = context.job_queue.get_jobs_by_name(name=f"{user.id} {ch_id}")
+        chats = models.Chat.get()
+        for chat in chats:
+            jobs = context.job_queue.get_jobs_by_name(name=f"{user.id} {chat.chat_id}")
             if not jobs:
-                await models.User.add_sub(user_id=user.id, sub=None)
-                await context.bot.unban_chat_member(chat_id=ch_id, user_id=user.id)
+                await models.User.add_sub(
+                    user_id=user.id,
+                    sub=None,
+                )
+                await context.bot.unban_chat_member(
+                    chat_id=chat.chat_id,
+                    user_id=user.id,
+                )
             links = models.InviteLink.get_by(user_id=user.id)
             for link in links:
                 try:
