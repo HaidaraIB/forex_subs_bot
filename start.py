@@ -9,10 +9,11 @@ from common.common import (
     build_admin_keyboard,
     check_hidden_keyboard,
 )
+import os
 
 
 async def inits(app: Application):
-    await models.Admin.add_new_admin(admin_id=OWNER_ID)
+    await models.Admin.add_new_admin(admin_id=int(os.getenv("OWNER_ID")))
 
 
 async def set_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
