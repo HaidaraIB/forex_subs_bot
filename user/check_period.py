@@ -44,7 +44,9 @@ async def check_period(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=InlineKeyboardMarkup.from_button(
                     InlineKeyboardButton(
                         text="رابط المتجر",
-                        url=STORE_LINK,
+                        url=context.bot_data.get(
+                            "store_link", "https://elite-orca.com/"
+                        ),
                     )
                 ),
             )

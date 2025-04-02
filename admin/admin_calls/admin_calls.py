@@ -141,6 +141,18 @@ async def general_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     callback_data="start_msg",
                 ),
             ],
+            [
+                InlineKeyboardButton(
+                    text="تغيير رابط المتجر 🛍",
+                    callback_data="store_link",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="مدة التجربة المجانية 🕐",
+                    callback_data="free_sub_period",
+                ),
+            ],
             back_to_admin_home_page_button[0],
         ]
         await update.callback_query.edit_message_text(
@@ -161,7 +173,7 @@ async def choose_general_option(update: Update, context: ContextTypes.DEFAULT_TY
         await update.callback_query.edit_message_text(
             text=(
                 "أرسل القيمة الجديدة\n"
-                f"القيمة الحالية: {context.bot_data.get(general_option, "")}"
+                f"القيمة الحالية: {context.bot_data.get(general_option, '')}"
             ),
             reply_markup=InlineKeyboardMarkup(back_buttons),
         )
@@ -173,8 +185,14 @@ back_to_choose_general_option = general_settings
 
 async def get_new_general_val(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
+        new_val = update.message.text
         general_option = context.user_data["general_option"]
-        context.bot_data[general_option] = update.message.text
+        if general_option == "free_sub_period" and not new_val.isnumeric():
+            await update.message.reply_text(
+                text="مدة التجربة المجانية عبارة عن رقم يمثل عدد الأيام ❗️"
+            )
+            return
+        context.bot_data[general_option] = new_val
         await update.message.reply_text(
             text="تمت العملية بنجاح ✅",
             reply_markup=build_admin_keyboard(),
@@ -191,7 +209,10 @@ general_settings_handler = ConversationHandler(
     ],
     states={
         GENERAL_OPTION: [
-            CallbackQueryHandler(choose_general_option, "^start_msg$"),
+            CallbackQueryHandler(
+                choose_general_option,
+                "^start_msg$|^free_sub_period$|^store_link$",
+            ),
         ],
         NEW_GENERAL_VAL: [
             MessageHandler(

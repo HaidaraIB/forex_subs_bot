@@ -81,7 +81,9 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 starts_at = now + timedelta(days=7 - weekday)
             elif now.hour >= 19:
                 starts_at = now + timedelta(days=1)
-            ends_at = starts_at + timedelta(days=FREE_SUB_PERIOD)
+            ends_at = starts_at + timedelta(
+                days=context.bot_data.get("free_sub_period", 3)
+            )
 
             context.job_queue.run_once(
                 kick_user,

@@ -56,7 +56,9 @@ async def remind_user(context: ContextTypes.DEFAULT_TYPE):
                     [
                         InlineKeyboardButton(
                             text="رابط المتجر",
-                            url=STORE_LINK,
+                            url=context.bot_data.get(
+                                "store_link", "https://elite-orca.com/"
+                            ),
                         ),
                         InlineKeyboardButton(
                             text="إيقاف التذكير",
