@@ -15,15 +15,20 @@ from custom_filters.Admin import Admin
 import models
 from common.constants import *
 from start import admin_command
+from admin.codes_settings.common import codes_settings_handler
 
 CODES, PERIOD, CONFIRM_ADD = range(3)
 
 
 async def add_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
+        back_buttons = [
+            build_back_button("back_to_codes_settings"),
+            back_to_admin_home_page_button[0],
+        ]
         await update.callback_query.edit_message_text(
             text="أرسل الأكواد",
-            reply_markup=InlineKeyboardMarkup(back_to_admin_home_page_button),
+            reply_markup=InlineKeyboardMarkup(back_buttons),
         )
         return CODES
 
@@ -119,7 +124,12 @@ async def confirm_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 add_codes_handler = ConversationHandler(
-    entry_points=[CallbackQueryHandler(callback=add_codes, pattern="^add codes$")],
+    entry_points=[
+        CallbackQueryHandler(
+            callback=add_codes,
+            pattern="^add_codes$",
+        )
+    ],
     states={
         CODES: [
             MessageHandler(
@@ -141,6 +151,7 @@ add_codes_handler = ConversationHandler(
         ],
     },
     fallbacks=[
+        codes_settings_handler,
         admin_command,
         back_to_admin_home_page_handler,
         CallbackQueryHandler(back_to_get_codes, "back_to_get_codes"),

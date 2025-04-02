@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, TIMESTAMP, func, select, insert
+import sqlalchemy as sa
 from models.DB import Base, connect_and_close, lock_and_release
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -6,19 +6,19 @@ from sqlalchemy.exc import IntegrityError
 
 class Code(Base):
     __tablename__ = "codes"
-    code = Column(String, primary_key=True)
-    user_id = Column(Integer, default=0)
-    period = Column(String)
-    creation_date = Column(TIMESTAMP, server_default=func.current_timestamp())
-    starts_at = Column(TIMESTAMP)
-    ends_at = Column(TIMESTAMP)
+    code = sa.Column(sa.String, primary_key=True)
+    user_id = sa.Column(sa.Integer, default=0)
+    period = sa.Column(sa.String)
+    creation_date = sa.Column(sa.TIMESTAMP, server_default=sa.func.current_timestamp())
+    starts_at = sa.Column(sa.TIMESTAMP)
+    ends_at = sa.Column(sa.TIMESTAMP)
 
     @classmethod
     @lock_and_release
     async def add(cls, code: str, user_id: int, period: str, s: Session = None):
         try:
             s.execute(
-                insert(cls).values(
+                sa.insert(cls).values(
                     code=code,
                     user_id=user_id,
                     period=period,
@@ -39,21 +39,21 @@ class Code(Base):
         s: Session = None,
     ):
         if code:
-            res = s.execute(select(cls).where(cls.code == code))
+            res = s.execute(sa.select(cls).where(cls.code == code))
             try:
                 return res.fetchone().t[0]
             except:
                 pass
 
         elif user_id:
-            res = s.execute(select(cls).where(cls.user_id == user_id))
+            res = s.execute(sa.select(cls).where(cls.user_id == user_id))
             try:
                 return list(map(lambda x: x[0], res.tuples().all()))
             except:
                 pass
-            
+
         elif unique_period == True:
-            res = s.execute(select(cls.period).distinct())
+            res = s.execute(sa.select(cls.period).distinct())
             try:
                 return list(map(lambda x: x[0], res.tuples().all()))
             except:
@@ -61,7 +61,7 @@ class Code(Base):
 
         elif used is not None:
             res = s.execute(
-                select(cls).where(cls.user_id == 0 if not used else cls.user_id != 0)
+                sa.select(cls).where(cls.user_id == 0 if not used else cls.user_id != 0)
             )
             try:
                 return list(map(lambda x: x[0], res.tuples().all()))
@@ -85,3 +85,8 @@ class Code(Base):
                 cls.ends_at: ends_at,
             }
         )
+
+    @classmethod
+    @lock_and_release
+    async def delete(cls, codes: list[str], s: Session = None):
+        s.execute(sa.delete(cls).where(cls.code.in_(codes)))

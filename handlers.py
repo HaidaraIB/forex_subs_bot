@@ -61,9 +61,11 @@ def main():
     app.add_handler(statistics_handler)
 
     # CODES SETTINGS
+    app.add_handler(delete_codes_handler)
     app.add_handler(add_codes_handler)
     app.add_handler(show_used_codes_handler)
     app.add_handler(show_unused_codes_handler)
+    app.add_handler(codes_settings_handler)
 
     app.add_handler(free_sub_settings_handler)
     app.add_handler(pause_free_sub_handler)

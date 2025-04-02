@@ -94,22 +94,14 @@ def build_admin_keyboard():
         ],
         [
             InlineKeyboardButton(
-                text="إضافة أكواد",
-                callback_data="add codes",
-            ),
-            InlineKeyboardButton(
-                text="إعدادات التجربة المجانية",
+                text="إعدادات التجربة المجانية 🆓",
                 callback_data="free sub settings",
             ),
         ],
         [
             InlineKeyboardButton(
-                text="عرض الأكواد غير المستخدمة",
-                callback_data="show NO codes",
-            ),
-            InlineKeyboardButton(
-                text="عرض الأكواد المستخدمة",
-                callback_data="show YES codes",
+                text="إعدادات الأكواد 🔡",
+                callback_data="codes_settings",
             ),
         ],
         [

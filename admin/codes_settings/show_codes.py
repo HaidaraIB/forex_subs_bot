@@ -11,7 +11,7 @@ async def show_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "NO": "غير مستخدمة",
             "YES": "مستخدمة",
         }
-        used = update.callback_query.data.split(" ")[1]
+        used = update.callback_query.data.split("_")[1]
         res = models.Code.get_by(used=True if used == "YES" else False)
 
         if not res:
@@ -44,9 +44,9 @@ async def show_codes(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 show_unused_codes_handler = CallbackQueryHandler(
     callback=show_codes,
-    pattern="^show NO codes$",
+    pattern="^show_NO_codes$",
 )
 show_used_codes_handler = CallbackQueryHandler(
     callback=show_codes,
-    pattern="^show YES codes$",
+    pattern="^show_YES_codes$",
 )
