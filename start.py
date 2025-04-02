@@ -1,5 +1,6 @@
-from telegram import Update, Chat, BotCommandScopeChat
+from telegram import Update, Chat, BotCommandScopeChat, error
 from telegram.ext import CommandHandler, ContextTypes, Application, ConversationHandler
+from telegram.constants import ParseMode
 import models
 from custom_filters import Admin
 from common.decorators import check_if_user_banned_dec, add_new_user_dec
@@ -35,10 +36,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if context.user_data.get("free_used", None) == None:
             context.user_data["free_used"] = False
-
-        await update.message.reply_text(
-            text=context.bot_data.get("start_msg", "أهلا بك...")
-        )
+        try:
+            await update.message.reply_text(
+                text=context.bot_data.get("start_msg", "أهلا بك..."),
+                parse_mode=ParseMode.MARKDOWN,
+                disable_web_page_preview=True,
+            )
+        except error.BadRequest:
+            context.bot_data["start_msg"] = "أهلا بك..."
         await update.message.reply_text(
             text=HOME_PAGE_TEXT,
             reply_markup=build_user_keyboard(context.user_data["free_used"]),

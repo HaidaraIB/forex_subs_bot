@@ -15,6 +15,7 @@ from telegram.ext import (
     filters,
     ConversationHandler,
 )
+from telegram.constants import ParseMode
 from common.common import build_admin_keyboard, request_buttons, build_back_button
 from common.back_to_home_page import (
     HOME_PAGE_TEXT,
@@ -175,7 +176,9 @@ async def choose_general_option(update: Update, context: ContextTypes.DEFAULT_TY
                 "أرسل القيمة الجديدة\n"
                 f"القيمة الحالية: {context.bot_data.get(general_option, '')}"
             ),
+            parse_mode=ParseMode.MARKDOWN,
             reply_markup=InlineKeyboardMarkup(back_buttons),
+            disable_web_page_preview=True,
         )
         return NEW_GENERAL_VAL
 
@@ -187,6 +190,8 @@ async def get_new_general_val(update: Update, context: ContextTypes.DEFAULT_TYPE
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
         new_val = update.message.text
         general_option = context.user_data["general_option"]
+        if general_option == "start_msg":
+            new_val = update.message.text_markdown
         if general_option == "free_sub_period" and not new_val.isnumeric():
             await update.message.reply_text(
                 text="مدة التجربة المجانية عبارة عن رقم يمثل عدد الأيام ❗️"
