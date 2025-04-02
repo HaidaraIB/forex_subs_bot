@@ -9,7 +9,14 @@ from common.constants import *
 
 async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE:
-        if context.user_data.get("free_used", False):
+        user = models.User.get_users(user_id=update.effective_user.id)
+        if user.cur_sub:
+            await update.callback_query.answer(
+                text="لديك اشتراك حالي بالفعل ❗️",
+                show_alert=True,
+            )
+            return
+        elif context.user_data.get("free_used", False):
             await update.callback_query.answer(
                 text="لقد قمت باستخدام الاشتراك المجاني بالفعل ❗️",
                 show_alert=True,
@@ -21,6 +28,7 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 show_alert=True,
             )
             return
+
         chats = models.Chat.get()
         for ch in chats:
             chat = await context.bot.get_chat(
@@ -46,7 +54,7 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             except error.RetryAfter as r:
                 await update.callback_query.answer(
-                    text=f"نتيجة الضغط الكبير عليك الانتظار {r.retry_after} ثانية ليتم توليد الرابط الخاص بك، شاكرين تفهمكم.",
+                    text=f"نتيجة الضغط الكبير عليك الانتظار {r.retry_after} ثانية ليتم توليد الرابط الخاص بك، شاكرين تفهمكم",
                     show_alert=True,
                 )
                 await asyncio.sleep(r.retry_after)
@@ -115,7 +123,7 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except UnboundLocalError:
             await update.callback_query.answer()
-            
+
         if context.user_data.get("wanna_reminder", None) == None:
             context.user_data["wanna_reminder"] = True
         context.user_data["free_used"] = True

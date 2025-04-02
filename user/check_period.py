@@ -35,7 +35,7 @@ async def check_period(update: Update, context: ContextTypes.DEFAULT_TYPE):
             seconds = diff.total_seconds() - (2 * 24 * 60 * 60)
             if seconds <= 0:
                 await update.callback_query.answer(
-                    f"اشتراكك منتهي، لديك {calc_period(abs(seconds))} مهلة قبل أن يتم إخراجك من القناة",
+                    f"اشتراكك منتهي، لديك {calc_period(abs(seconds))} مهلة قبل أن يتم إخراجك من القناة ⚠️",
                     show_alert=True,
                 )
 

@@ -1,20 +1,19 @@
 import sqlalchemy as sa
-from sqlalchemy.orm import Session, relationship
+from sqlalchemy.orm import Session
 from models.DB import Base, connect_and_close, lock_and_release
 
 
-class Chat(Base):
-    __tablename__ = "chats"
-    chat_id = sa.Column(sa.Integer, primary_key=True)
-    username = sa.Column(sa.String)
-    name = sa.Column(sa.String)
+class CodeChat(Base):
+    __tablename__ = "code_chats"
 
-    codes = relationship("Code", secondary="code_chats", back_populates="chats")
+    id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    chat_id = sa.Column(sa.ForeignKey("chats.chat_id", ondelete="CASCADE"))
+    code = sa.Column(sa.ForeignKey("codes.code", ondelete="CASCADE"))
 
     @classmethod
     @lock_and_release
-    async def add(cls, chat_id: int, username: str, name: str, s: Session = None):
-        s.execute(sa.insert(cls).values(chat_id=chat_id, username=username, name=name))
+    async def add(cls, chat_id: int, code: str, s: Session = None):
+        s.execute(sa.insert(cls).values(chat_id=chat_id, code=code))
 
     @classmethod
     @connect_and_close

@@ -39,7 +39,7 @@ async def choose_clear_free_sub(update: Update, context: ContextTypes.DEFAULT_TY
                 if context.application.user_data[user_id].get("free_used", False):
                     context.application.user_data[user_id]["free_used"] = False
             await update.callback_query.answer(
-                text="تم تصفير التجربة المجانية للجميع بنجاح",
+                text="تم تصفير التجربة المجانية للجميع بنجاح ✅",
                 show_alert=True,
             )
             await update.callback_query.edit_message_text(

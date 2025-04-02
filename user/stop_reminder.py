@@ -7,11 +7,11 @@ async def stop_reminder(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if context.user_data.get("wanna_remincer", True):
             context.user_data["wanna_reminder"] = False
             await update.callback_query.answer(
-                text="لن يتم تذكيرك بعد الآن",
+                text="لن يتم تذكيرك بعد الآن ✅",
                 show_alert=True,
             )
         await update.callback_query.answer(
-            text="لقد قمت بإيقاف التذكير بالفعل",
+            text="لقد قمت بإيقاف التذكير بالفعل ❗️",
             show_alert=True,
         )
 

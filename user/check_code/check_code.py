@@ -43,7 +43,7 @@ async def check_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             days = int(seconds // (3600 * 24))
             if days > 3:
                 await update.callback_query.answer(
-                    text="لا يمكنك إرسال كود جديد حتى يتبقى لنهاية اشتراكك 3 أيام أو أقل",
+                    text="لا يمكنك إرسال كود جديد حتى يتبقى لنهاية اشتراكك 3 أيام أو أقل ❗️",
                     show_alert=True,
                 )
                 return ConversationHandler.END
@@ -52,7 +52,7 @@ async def check_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
         periods_keyboard = build_periods_keyboard(periods)
         if not periods_keyboard:
             await update.callback_query.answer(
-                text="ليس لدينا اشتراكات بعد",
+                text="ليس لدينا اشتراكات بعد ❗️",
                 show_alert=True,
             )
             return
@@ -120,7 +120,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += after_7_text
         ends_at = starts_at + timedelta(days=int(period))
 
-        chats = models.Chat.get()
+        chats = models.CodeChat.get(attr="code", val=code.code, all=True)
 
         for chat in chats:
             jobs = context.job_queue.get_jobs_by_name(

@@ -1,6 +1,6 @@
 import sqlalchemy as sa
 from models.DB import Base, connect_and_close, lock_and_release
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, relationship
 from sqlalchemy.exc import IntegrityError
 
 
@@ -13,20 +13,12 @@ class Code(Base):
     starts_at = sa.Column(sa.TIMESTAMP)
     ends_at = sa.Column(sa.TIMESTAMP)
 
+    chats = relationship("Chat", secondary="code_chats", back_populates="codes")
+
     @classmethod
     @lock_and_release
-    async def add(cls, code: str, user_id: int, period: str, s: Session = None):
-        try:
-            s.execute(
-                sa.insert(cls).values(
-                    code=code,
-                    user_id=user_id,
-                    period=period,
-                )
-            )
-            return True
-        except IntegrityError:
-            return False
+    async def add(cls, codes , s: Session = None):
+        s.add_all(codes)
 
     @classmethod
     @connect_and_close
