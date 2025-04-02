@@ -20,7 +20,7 @@ from custom_filters import Admin
 (
     THE_MESSAGE,
     SEND_TO,
-    ENTER_USERS,
+    USERS,
 ) = range(3)
 
 
@@ -64,22 +64,15 @@ async def choose_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
             users = models.User.get_users(subsicribers=False)
 
         elif update.callback_query.data == "specific users":
-            context.user_data["specific users"] = set()
-            done_button = [
-                [
-                    InlineKeyboardButton(
-                        text="تم الانتهاء👍",
-                        callback_data="done entering users",
-                    )
-                ],
+            back_buttons = [
                 build_back_button("back to send to"),
                 back_to_admin_home_page_button[0],
             ]
             await update.callback_query.edit_message_text(
-                text="قم بإرسال آيديات المستخدمين الذين تريد إرسال الرسالة لهم عند الانتهاء اضغط تم الانتهاء.",
-                reply_markup=InlineKeyboardMarkup(done_button),
+                text="قم بإرسال آيديات المستخدمين الذين تريد إرسال الرسالة لهم سطراً سطراً.",
+                reply_markup=InlineKeyboardMarkup(back_buttons),
             )
-            return ENTER_USERS
+            return USERS
 
         asyncio.create_task(send_to(users=users, context=context))
 
@@ -95,40 +88,13 @@ async def choose_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
 back_to_send_to = get_message
 
 
-async def enter_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def get_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
-        user_id = int(update.message.text)
-        punch_line = "تابع مع باقي الآيديات واضغط تم الانتهاء عند الانتهاء."
-
-        try:
-            await context.bot.get_chat(chat_id=user_id)
-        except error.TelegramError:
-            await update.message.reply_text(
-                text=(
-                    "لم يتم العثور على المستخدم، ربما لم يبدأ محادثة مع البوت بعد ❗️\n"
-                    + punch_line
-                ),
-                reply_markup=build_done_button(),
-            )
-            return
-
-        context.user_data["specific users"].add(user_id)
+        users = set(map(int, update.message.text.split("\n")))
+        asyncio.create_task(send_to(users=users, context=context))
         await update.message.reply_text(
-            text="تم العثور على المستخدم ✅\n" + punch_line,
-            reply_markup=build_done_button(),
-        )
-        return ENTER_USERS
-
-
-async def done_entering_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
-        keyboard = build_admin_keyboard()
-        await update.callback_query.edit_message_text(
             text="يقوم البوت بإرسال الرسائل الآن، يمكنك متابعة استخدامه بشكل طبيعي.",
-            reply_markup=keyboard,
-        )
-        asyncio.create_task(
-            send_to(users=context.user_data["specific users"], context=context)
+            reply_markup=build_admin_keyboard(),
         )
         return ConversationHandler.END
 
@@ -158,14 +124,10 @@ broadcast_message_handler = ConversationHandler(
                 pattern="^((all)|(specific)) users$|^(none )?subsicribers$",
             )
         ],
-        ENTER_USERS: [
-            CallbackQueryHandler(
-                done_entering_users,
-                "^done entering users$",
-            ),
+        USERS: [
             MessageHandler(
-                filters=filters.Regex("^\d+$"),
-                callback=enter_users,
+                filters=filters.Regex(r"^-?[0-9]+(?:\n-?[0-9]+)*$"),
+                callback=get_users,
             ),
         ],
     },

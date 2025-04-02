@@ -118,7 +118,7 @@ def build_admin_keyboard():
         ],
         [
             InlineKeyboardButton(
-                text="الإحصائيات",
+                text="الإحصائيات 📊",
                 callback_data="statistics",
             )
         ],
@@ -126,7 +126,11 @@ def build_admin_keyboard():
             InlineKeyboardButton(
                 text="رسالة جماعية 👥",
                 callback_data="broadcast",
-            )
+            ),
+            InlineKeyboardButton(
+                text="عرض معلومات مستخدم 👤",
+                callback_data="show_user",
+            ),
         ],
     ]
     return InlineKeyboardMarkup(keyboard)

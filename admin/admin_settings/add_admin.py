@@ -45,7 +45,7 @@ async def add_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         KeyboardButton(
                             text="اختيار حساب آدمن",
                             request_users=KeyboardButtonRequestUsers(
-                                request_id=4, user_is_bot=False
+                                request_id=8, user_is_bot=False
                             ),
                         )
                     ]
