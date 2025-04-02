@@ -37,10 +37,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data["free_used"] = False
 
         await update.message.reply_text(
-            text="أهلاً بك...",
+            text=context.bot_data.get("start_msg", "أهلا بك...")
+        )
+        await update.message.reply_text(
+            text=HOME_PAGE_TEXT,
             reply_markup=build_user_keyboard(context.user_data["free_used"]),
         )
         return ConversationHandler.END
+
 
 async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):

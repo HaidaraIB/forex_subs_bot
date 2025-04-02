@@ -3,10 +3,10 @@ from telegram import (
     Update,
     ReplyKeyboardRemove,
     ReplyKeyboardMarkup,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
     KeyboardButton,
     KeyboardButtonRequestUsers,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
 )
 from telegram.ext import (
     ContextTypes,
@@ -15,7 +15,7 @@ from telegram.ext import (
     filters,
     ConversationHandler,
 )
-from common.common import build_admin_keyboard, request_buttons
+from common.common import build_admin_keyboard, request_buttons, build_back_button
 from common.back_to_home_page import (
     HOME_PAGE_TEXT,
     back_to_admin_home_page_button,
@@ -128,6 +128,86 @@ def stringify_user(user: models.User):
         f"كود الاشتراك الأخير: {f'<code>{user.cur_sub}</code>' if user.cur_sub else '<i>لا يوجد</i>'}"
     )
 
+
+GENERAL_OPTION, NEW_GENERAL_VAL = range(2)
+
+
+async def general_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
+        general_settings_keyboard = [
+            [
+                InlineKeyboardButton(
+                    text="تغيير الرسالة الترحيبية 👋🏻",
+                    callback_data="start_msg",
+                ),
+            ],
+            back_to_admin_home_page_button[0],
+        ]
+        await update.callback_query.edit_message_text(
+            text="اختر أحد الخيارات",
+            reply_markup=InlineKeyboardMarkup(general_settings_keyboard),
+        )
+        return GENERAL_OPTION
+
+
+async def choose_general_option(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
+        back_buttons = [
+            build_back_button("back_to_choose_general_option"),
+            back_to_admin_home_page_button[0],
+        ]
+        general_option = update.callback_query.data
+        context.user_data["general_option"] = general_option
+        await update.callback_query.edit_message_text(
+            text=(
+                "أرسل القيمة الجديدة\n"
+                f"القيمة الحالية: {context.bot_data.get(general_option, "")}"
+            ),
+            reply_markup=InlineKeyboardMarkup(back_buttons),
+        )
+        return NEW_GENERAL_VAL
+
+
+back_to_choose_general_option = general_settings
+
+
+async def get_new_general_val(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
+        general_option = context.user_data["general_option"]
+        context.bot_data[general_option] = update.message.text
+        await update.message.reply_text(
+            text="تمت العملية بنجاح ✅",
+            reply_markup=build_admin_keyboard(),
+        )
+        return ConversationHandler.END
+
+
+general_settings_handler = ConversationHandler(
+    entry_points=[
+        CallbackQueryHandler(
+            general_settings,
+            "^general_settings$",
+        ),
+    ],
+    states={
+        GENERAL_OPTION: [
+            CallbackQueryHandler(choose_general_option, "^start_msg$"),
+        ],
+        NEW_GENERAL_VAL: [
+            MessageHandler(
+                filters=filters.TEXT & ~filters.COMMAND,
+                callback=get_new_general_val,
+            ),
+        ],
+    },
+    fallbacks=[
+        admin_command,
+        back_to_admin_home_page_handler,
+        CallbackQueryHandler(
+            back_to_choose_general_option, "^back_to_choose_general_option$"
+        ),
+    ],
+)
 
 show_user_handler = ConversationHandler(
     entry_points=[

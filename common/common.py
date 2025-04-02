@@ -132,6 +132,12 @@ def build_admin_keyboard():
                 callback_data="show_user",
             ),
         ],
+        [
+            InlineKeyboardButton(
+                text="إعدادات عامة 🌐",
+                callback_data="general_settings",
+            ),
+        ],
     ]
     return InlineKeyboardMarkup(keyboard)
 
