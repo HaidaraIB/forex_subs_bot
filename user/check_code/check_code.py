@@ -29,34 +29,6 @@ GET_CODE = 0
 
 async def check_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE:
-        chats = models.Chat.get()
-        jobs = context.job_queue.get_jobs_by_name(
-            name=f"{update.effective_user.id} {chats[0].chat_id}"
-        )
-        if not jobs:
-            jobs = context.job_queue.get_jobs_by_name(
-                name=f"{update.effective_user.id}"
-            )
-        if jobs:
-            diff = jobs[0].next_t - datetime.now(TIMEZONE)
-            seconds = diff.total_seconds()
-            days = int(seconds // (3600 * 24))
-            if days > 3:
-                await update.callback_query.answer(
-                    text="لا يمكنك إرسال كود جديد حتى يتبقى لنهاية اشتراكك 3 أيام أو أقل ❗️",
-                    show_alert=True,
-                )
-                return ConversationHandler.END
-
-        periods = models.Code.get_by(unique_period=True)
-        periods_keyboard = build_periods_keyboard(periods)
-        if not periods_keyboard:
-            await update.callback_query.answer(
-                text="ليس لدينا اشتراكات بعد ❗️",
-                show_alert=True,
-            )
-            return
-
         await update.callback_query.edit_message_text(
             text="أرسل الكود",
             reply_markup=InlineKeyboardMarkup(back_to_user_home_page_button),
@@ -66,23 +38,39 @@ async def check_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE:
-        back_buttons = [
-            build_back_button("back_to_get_code"),
-            back_to_user_home_page_button[0],
-        ]
-
         sent_code = re.sub(r"[^\w\s\-+=/:?,.]", "", update.effective_message.text)
+        code_chats = models.CodeChat.get(attr="code", val=sent_code, all=True)
+        for code_chat in code_chats:
+            jobs = context.job_queue.get_jobs_by_name(
+                name=f"{update.effective_user.id} {code_chat.chat_id}"
+            )
+            if not jobs:
+                jobs = context.job_queue.get_jobs_by_name(
+                    name=f"{update.effective_user.id}"
+                )
+            if jobs:
+                diff = jobs[0].next_t - datetime.now(TIMEZONE)
+                seconds = diff.total_seconds()
+                days = int(seconds // (3600 * 24))
+                if days > 3:
+                    await update.message.reply_text(
+                        text="لا يمكنك إرسال كود جديد حتى يتبقى لنهاية اشتراكك 3 أيام أو أقل ❗️",
+                        reply_markup=InlineKeyboardMarkup(back_to_user_home_page_button),
+                    )
+                    return
+
         code = models.Code.get_by(code=sent_code)
+
         if not code:
             await update.message.reply_text(
-                text="كود خاطئ ❗️ الرجاء إعادة المحاولة.",
-                reply_markup=InlineKeyboardMarkup(back_buttons),
+                text="كود خاطئ الرجاء إعادة المحاولة ❗️",
+                reply_markup=InlineKeyboardMarkup(back_to_user_home_page_button),
             )
             return
         elif code.user_id:
             await update.message.reply_text(
                 text="هذا الكود مستخدم من قبل ❗️",
-                reply_markup=InlineKeyboardMarkup(back_buttons),
+                reply_markup=InlineKeyboardMarkup(back_to_user_home_page_button),
             )
             return
 
@@ -120,9 +108,7 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += after_7_text
         ends_at = starts_at + timedelta(days=int(period))
 
-        chats = models.CodeChat.get(attr="code", val=code.code, all=True)
-
-        for chat in chats:
+        for chat in code_chats:
             jobs = context.job_queue.get_jobs_by_name(
                 name=f"{update.effective_user.id} {chat.chat_id}"
             )
