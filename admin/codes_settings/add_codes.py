@@ -165,18 +165,25 @@ back_to_choose_chats = get_period
 async def confirm_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
         codes = [
-            models.Code(
-                code=code,
-                user_id=0,
-                period=context.user_data["period"],
-                chats=[
-                    models.Chat.get(attr="chat_id", val=chat_id)
-                    for chat_id in context.user_data["chats_to_link"]
-                ],
-            )
+            {
+                "code": code,
+                "user_id": 0,
+                "period": context.user_data["period"],
+            }
             for code in context.user_data["codes_to_add"]
         ]
         await models.Code.add(codes=codes)
+        code_chats = []
+        for code in context.user_data["codes_to_add"]:
+            for chat_id in context.user_data["chats_to_link"]:
+                code_chats.append(
+                    {
+                        "chat_id": chat_id,
+                        "code": code,
+                    }
+                )
+
+        await models.CodeChat.add(code_chats)
         await update.message.reply_text(
             text=f"تمت العملية بنجاح ✅",
             reply_markup=build_admin_keyboard(),

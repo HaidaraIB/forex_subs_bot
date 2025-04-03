@@ -17,8 +17,8 @@ class Code(Base):
 
     @classmethod
     @lock_and_release
-    async def add(cls, codes , s: Session = None):
-        s.add_all(codes)
+    async def add(cls, codes: list[dict], s: Session = None):
+        s.execute(sa.insert(cls).values(codes))
 
     @classmethod
     @connect_and_close

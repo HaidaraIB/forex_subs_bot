@@ -12,8 +12,8 @@ class CodeChat(Base):
 
     @classmethod
     @lock_and_release
-    async def add(cls, chat_id: int, code: str, s: Session = None):
-        s.execute(sa.insert(cls).values(chat_id=chat_id, code=code))
+    async def add(cls, code_chats: list[dict], s: Session = None):
+        s.execute(sa.insert(cls).values(code_chats))
 
     @classmethod
     @connect_and_close
