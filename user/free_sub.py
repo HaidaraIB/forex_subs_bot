@@ -82,7 +82,7 @@ async def free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
             elif now.hour >= 19:
                 starts_at = now + timedelta(days=1)
             ends_at = starts_at + timedelta(
-                days=context.bot_data.get("free_sub_period", 3)
+                days=int(context.bot_data.get("free_sub_period", 3))
             )
 
             context.job_queue.run_once(
