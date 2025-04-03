@@ -29,7 +29,12 @@ async def notify_none_members(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def send_none_members_new_invite_link(context: ContextTypes.DEFAULT_TYPE):
     subscribers = models.User.get_users(subsicribers=True)
+    code_chats = models.CodeChat.get(
+        attr="chat_id", val=context.user_data["chat_id"], all=True
+    )
     for subscriber in subscribers:
+        if subscriber.cur_sub not in [code_chat.code for code_chat in code_chats]:
+            continue
         member = await context.bot.get_chat_member(
             chat_id=context.user_data["chat_id"],
             user_id=subscriber.id,

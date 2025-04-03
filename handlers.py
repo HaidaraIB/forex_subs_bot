@@ -18,6 +18,7 @@ from user.check_period import *
 from user.free_sub import *
 from user.join_private_channel import *
 
+from admin.user_settings import *
 from admin.admin_calls import *
 from admin.admin_settings import *
 from admin.broadcast import *

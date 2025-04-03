@@ -33,22 +33,22 @@ async def check_period(update: Update, context: ContextTypes.DEFAULT_TYPE):
             job = jobs[0]
             diff = job.next_t - datetime.datetime.now(TIMEZONE)
             seconds = diff.total_seconds() - (2 * 24 * 60 * 60)
-            if seconds <= 0:
-                await update.callback_query.answer(
-                    f"اشتراكك منتهي، لديك {calc_period(abs(seconds))} مهلة قبل أن يتم إخراجك من القناة ⚠️",
-                    show_alert=True,
+            store_button = InlineKeyboardMarkup.from_button(
+                InlineKeyboardButton(
+                    text="رابط المتجر",
+                    url=context.bot_data.get("store_link", "https://elite-orca.com/"),
                 )
+            )
+            if seconds <= 0:
+                await update.callback_query.edit_message_text(
+                    f"اشتراكك منتهي، لديك {calc_period(abs(seconds))} مهلة قبل أن يتم إخراجك من القناة ⚠️",
+                    reply_markup=store_button,
+                )
+                return
 
             await update.callback_query.edit_message_text(
                 text=calc_period(seconds),
-                reply_markup=InlineKeyboardMarkup.from_button(
-                    InlineKeyboardButton(
-                        text="رابط المتجر",
-                        url=context.bot_data.get(
-                            "store_link", "https://elite-orca.com/"
-                        ),
-                    )
-                ),
+                reply_markup=store_button,
             )
         else:
             await update.callback_query.answer(
