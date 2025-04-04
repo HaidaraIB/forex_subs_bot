@@ -71,6 +71,7 @@ def main():
     app.add_handler(free_sub_settings_handler)
     app.add_handler(pause_free_sub_handler)
     app.add_handler(clear_free_sub_handler)
+    app.add_handler(link_chats_handler)
 
     # USER
     app.add_handler(stop_reminder_handler)

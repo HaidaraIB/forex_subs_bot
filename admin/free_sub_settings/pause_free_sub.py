@@ -2,7 +2,7 @@ from telegram import Update, Chat, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, CallbackQueryHandler
 
 from custom_filters import Admin
-from admin.free_sub_settings.common import build_free_sub_settings_keyboard
+from admin.free_sub_settings.free_sub_settings import build_free_sub_settings_keyboard
 from common.back_to_home_page import back_to_admin_home_page_button
 
 
@@ -24,5 +24,5 @@ async def pause_free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 pause_free_sub_handler = CallbackQueryHandler(
     pause_free_sub,
-    "^pause free sub$",
+    "^pause_free_sub$",
 )

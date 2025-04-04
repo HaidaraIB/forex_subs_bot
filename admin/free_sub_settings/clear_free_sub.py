@@ -1,4 +1,4 @@
-from telegram import Update, Chat, InlineKeyboardMarkup
+from telegram import Update, Chat, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import (
     ContextTypes,
     ConversationHandler,
@@ -7,16 +7,14 @@ from telegram.ext import (
     filters,
 )
 from custom_filters import Admin
-
-from admin.free_sub_settings.common import build_clear_free_sub_keyboard
 from common.common import build_back_button, build_admin_keyboard
 from common.back_to_home_page import (
     back_to_admin_home_page_button,
     back_to_admin_home_page_handler,
 )
 from common.constants import HOME_PAGE_TEXT
-
 from start import admin_command
+from admin.free_sub_settings.free_sub_settings import free_sub_settings_handler
 
 CHOOSE_CLEAR_FREE_SUB, USER_IDS = range(2)
 
@@ -24,6 +22,7 @@ CHOOSE_CLEAR_FREE_SUB, USER_IDS = range(2)
 async def clear_free_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
         keyboard = build_clear_free_sub_keyboard()
+        keyboard.append(build_back_button("back_to_free_sub_settings"))
         keyboard.append(back_to_admin_home_page_button[0])
         await update.callback_query.edit_message_text(
             text="هل تريد؟",
@@ -88,11 +87,27 @@ async def get_user_ids(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
 
 
+def build_clear_free_sub_keyboard():
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                text="جميع المستخدمين",
+                callback_data="all_clear_free_sub",
+            ),
+            InlineKeyboardButton(
+                text="مستخدمين محددين",
+                callback_data="specific_clear_free_sub",
+            ),
+        ]
+    ]
+    return keyboard
+
+
 clear_free_sub_handler = ConversationHandler(
     entry_points=[
         CallbackQueryHandler(
             clear_free_sub,
-            "^clear free sub$",
+            "^clear_free_sub$",
         ),
     ],
     states={
@@ -112,6 +127,7 @@ clear_free_sub_handler = ConversationHandler(
     fallbacks=[
         admin_command,
         back_to_admin_home_page_handler,
+        free_sub_settings_handler,
         CallbackQueryHandler(
             back_to_choose_clear_free_sub, "^back_to_choose_clear_free_sub$"
         ),
