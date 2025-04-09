@@ -46,6 +46,12 @@ async def choose_statistic(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pd.read_sql_query("SELECT * FROM codes", connection).to_excel(
                 "excels/codes.xlsx"
             )
+            pd.read_sql_query("SELECT * FROM chats", connection).to_excel(
+                "excels/chats.xlsx"
+            )
+            pd.read_sql_query("SELECT * FROM code_chats", connection).to_excel(
+                "excels/code_chats.xlsx"
+            )
             pd.read_sql_query("SELECT * FROM invite_links", connection).to_excel(
                 "excels/invite_links.xlsx"
             )
@@ -56,6 +62,8 @@ async def choose_statistic(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 media=[
                     InputMediaDocument(media=open("excels/users.xlsx", mode="br")),
                     InputMediaDocument(media=open("excels/codes.xlsx", mode="br")),
+                    InputMediaDocument(media=open("excels/chats.xlsx", mode="br")),
+                    InputMediaDocument(media=open("excels/code_chats.xlsx", mode="br")),
                     InputMediaDocument(
                         media=open("excels/invite_links.xlsx", mode="br")
                     ),
