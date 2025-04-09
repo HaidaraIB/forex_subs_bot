@@ -159,6 +159,20 @@ def build_back_button(data: str):
     return [InlineKeyboardButton(text="الرجوع🔙", callback_data=data)]
 
 
+def build_confirmation_keyboard(data:str):
+    return [
+        [
+            InlineKeyboardButton(
+                text="نعم 👍",
+                callback_data=f"yes_{data}",
+            ),
+            InlineKeyboardButton(
+                text="لا 👎",
+                callback_data=f"no_{data}",
+            ),
+        ],
+    ]
+
 def uuid_generator():
     return uuid.uuid4().hex
 

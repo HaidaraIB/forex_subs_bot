@@ -65,10 +65,16 @@ async def get_user_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [
             [
                 InlineKeyboardButton(
-                    text="إلغاء الاشتراك الحالي ❌",
+                    text="إلغاء الاشتراك الحالي ✖️",
                     callback_data=f"cancel_sub_{user_id}",
-                )
-            ]
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="إضافة اشتراك جديد ➕",
+                    callback_data=f"add_sub_{user_id}",
+                ),
+            ],
         ]
         await update.message.reply_text(
             text=stringify_user(user), reply_markup=InlineKeyboardMarkup(keyboard)
@@ -76,11 +82,6 @@ async def get_user_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             text="يمكنك عرض مستخدم آخر أو الإلغاء بالضغط على /admin"
         )
-
-
-async def cancel_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
-        pass
 
 
 def stringify_user(user: models.User):
@@ -92,6 +93,35 @@ def stringify_user(user: models.User):
         f"كود الاشتراك الأخير: {f'<code>{user.cur_sub}</code>' if user.cur_sub else '<i>لا يوجد</i>'}"
     )
 
+
+async def back_to_user_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
+        user_id = int(update.callback_query.data.split("_")[-1])
+        user = models.User.get_users(user_id=user_id)
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    text="إلغاء الاشتراك الحالي ✖️",
+                    callback_data=f"cancel_sub_{user_id}",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="إضافة اشتراك جديد ➕",
+                    callback_data=f"add_sub_{user_id}",
+                ),
+            ],
+        ]
+        await update.callback_query.edit_message_text(
+            text=stringify_user(user),
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+        return ConversationHandler.END
+
+
+back_to_user_info_handler = CallbackQueryHandler(
+    back_to_user_info, "^back_to_user_info$"
+)
 
 show_user_handler = ConversationHandler(
     entry_points=[

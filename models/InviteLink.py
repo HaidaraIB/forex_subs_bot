@@ -47,7 +47,7 @@ class InviteLink(Base):
         if code:
             res = s.execute(select(cls).where(cls.code == code))
             try:
-                return res.fetchone().t[0]
+                return list(map(lambda x: x[0], res.tuples().all()))
             except:
                 pass
 

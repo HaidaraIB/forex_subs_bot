@@ -80,6 +80,8 @@ def main():
     app.add_handler(join_private_channel_handler)
     app.add_handler(free_sub_handler)
 
+    app.add_handler(cancel_sub_handler)
+
     app.add_handler(general_settings_handler)
     app.add_handler(show_user_handler)
     app.add_handler(admin_command)
