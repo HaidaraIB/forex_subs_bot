@@ -7,11 +7,6 @@ from telegram.ext import (
     filters,
 )
 from telegram.constants import ChatMemberStatus
-from common.common import (
-    build_back_button,
-    build_periods_keyboard,
-    reschedule_kick_user,
-)
 from common.constants import *
 from common.back_to_home_page import (
     back_to_user_home_page_handler,
@@ -55,7 +50,9 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if days > 3:
                     await update.message.reply_text(
                         text="لا يمكنك إرسال كود جديد حتى يتبقى لنهاية اشتراكك 3 أيام أو أقل ❗️",
-                        reply_markup=InlineKeyboardMarkup(back_to_user_home_page_button),
+                        reply_markup=InlineKeyboardMarkup(
+                            back_to_user_home_page_button
+                        ),
                     )
                     return
 
@@ -117,9 +114,8 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     name=f"{update.effective_user.id}"
                 )
             if jobs:
-                res = reschedule_kick_user(jobs[0])
-                if res:
-                    ends_at += res
+                ends_at += jobs[0].next_t - datetime.now(TIMEZONE) - timedelta(days=2)
+                jobs[0].schedule_removal()
 
             member = await context.bot.get_chat_member(
                 chat_id=chat.chat_id,

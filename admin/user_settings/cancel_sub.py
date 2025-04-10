@@ -28,7 +28,7 @@ async def cancel_sub(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
         keyboard = build_confirmation_keyboard(f"cancel_sub_{user_id}")
-        keyboard.append(build_back_button("back_to_user_info"))
+        keyboard.append(build_back_button(f"back_to_user_info_{user_id}"))
         keyboard.append(back_to_admin_home_page_button[0])
         await update.callback_query.edit_message_text(
             text=(

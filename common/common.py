@@ -27,18 +27,6 @@ logging.basicConfig(
 )
 
 
-def reschedule_kick_user(job: Job):
-    ends_at = 0
-    diff = job.next_t - datetime.now(TIMEZONE)
-    seconds = diff.total_seconds()
-    days = int(seconds // (3600 * 24))
-    if days <= 3:
-        ends_at = diff - timedelta(days=2)
-        job.schedule_removal()
-
-    return ends_at
-
-
 def check_hidden_keyboard(context: ContextTypes.DEFAULT_TYPE):
     if (
         not context.user_data.get("request_keyboard_hidden", None)
@@ -159,7 +147,7 @@ def build_back_button(data: str):
     return [InlineKeyboardButton(text="الرجوع🔙", callback_data=data)]
 
 
-def build_confirmation_keyboard(data:str):
+def build_confirmation_keyboard(data: str):
     return [
         [
             InlineKeyboardButton(
@@ -172,6 +160,7 @@ def build_confirmation_keyboard(data:str):
             ),
         ],
     ]
+
 
 def uuid_generator():
     return uuid.uuid4().hex

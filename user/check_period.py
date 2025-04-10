@@ -5,6 +5,22 @@ from common.constants import *
 import models
 
 
+def get_period_in_seconds(
+    context: ContextTypes.DEFAULT_TYPE, chat_id: int, user_id: int
+):
+    seconds = 0
+    jobs = context.job_queue.get_jobs_by_name(
+        name=f"{user_id} {chat_id}",
+    )
+    if not jobs:
+        jobs = context.job_queue.get_jobs_by_name(name=f"{user_id}")
+    if jobs:
+        job = jobs[0]
+        diff = job.next_t - datetime.datetime.now(TIMEZONE)
+        seconds = diff.total_seconds() - (2 * 24 * 60 * 60)
+    return seconds
+
+
 def calc_period(seconds: int):
     days = int(seconds // (3600 * 24))
     hours = int((seconds % (3600 * 24)) // 3600)
@@ -21,18 +37,14 @@ def calc_period(seconds: int):
 
 async def check_period(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE:
-        chats = models.Chat.get()
-        jobs = context.job_queue.get_jobs_by_name(
-            name=f"{update.effective_user.id} {chats[0].chat_id}",
-        )
-        if not jobs:
-            jobs = context.job_queue.get_jobs_by_name(
-                name=f"{update.effective_user.id}"
+        user = models.User.get_users(user_id=update.effective_user.id)
+        if user.cur_sub:
+            chat = models.CodeChat.get(attr="code", val=user.cur_sub)
+            seconds = get_period_in_seconds(
+                context=context,
+                chat_id=chat.chat_id,
+                user_id=update.effective_user.id,
             )
-        if jobs:
-            job = jobs[0]
-            diff = job.next_t - datetime.datetime.now(TIMEZONE)
-            seconds = diff.total_seconds() - (2 * 24 * 60 * 60)
             store_button = InlineKeyboardMarkup.from_button(
                 InlineKeyboardButton(
                     text="رابط المتجر",

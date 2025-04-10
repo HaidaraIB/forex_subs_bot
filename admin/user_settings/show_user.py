@@ -6,6 +6,7 @@ from telegram import (
     KeyboardButtonRequestUsers,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    ReplyKeyboardRemove,
 )
 from telegram.ext import (
     ContextTypes,
@@ -16,8 +17,13 @@ from telegram.ext import (
 )
 from custom_filters import Admin
 import models
-from common.back_to_home_page import back_to_admin_home_page_handler
+from common.back_to_home_page import (
+    back_to_admin_home_page_handler,
+    back_to_admin_home_page_button,
+)
 from start import admin_command
+from user.check_period import get_period_in_seconds, calc_period
+from admin.user_settings.common import build_user_info_keyboard, stringify_user
 
 USER_ID = 0
 
@@ -62,65 +68,55 @@ async def get_user_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    text="إلغاء الاشتراك الحالي ✖️",
-                    callback_data=f"cancel_sub_{user_id}",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="إضافة اشتراك جديد ➕",
-                    callback_data=f"add_sub_{user_id}",
-                ),
-            ],
-        ]
+        period = 0
+        if user.cur_sub:
+            chat = models.CodeChat.get(attr="code", val=user.cur_sub)
+            seconds = get_period_in_seconds(
+                context=context,
+                chat_id=chat.chat_id,
+                user_id=user_id,
+            )
+            period = calc_period(seconds)
+
+        keyboard = build_user_info_keyboard(user_id=user_id)
+        keyboard.append(back_to_admin_home_page_button[0])
         await update.message.reply_text(
-            text=stringify_user(user), reply_markup=InlineKeyboardMarkup(keyboard)
+            text="تم العثور على المستخدم ✅",
+            reply_markup=ReplyKeyboardRemove(),
         )
         await update.message.reply_text(
-            text="يمكنك عرض مستخدم آخر أو الإلغاء بالضغط على /admin"
+            text=stringify_user(user=user, period=period),
+            reply_markup=InlineKeyboardMarkup(keyboard),
         )
-
-
-def stringify_user(user: models.User):
-    return (
-        "معلومات مستخدم 👤\n\n"
-        f"الآيدي: <code>{user.id}</code>\n"
-        f"اسم المستخدم: {f'@{user.username}' if user.username else '<i>لا يوجد</i>'}\n"
-        f"الاسم الكامل: <b>{user.name}</b>\n"
-        f"كود الاشتراك الأخير: {f'<code>{user.cur_sub}</code>' if user.cur_sub else '<i>لا يوجد</i>'}"
-    )
+        return ConversationHandler.END
 
 
 async def back_to_user_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE and Admin().filter(update):
         user_id = int(update.callback_query.data.split("_")[-1])
         user = models.User.get_users(user_id=user_id)
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    text="إلغاء الاشتراك الحالي ✖️",
-                    callback_data=f"cancel_sub_{user_id}",
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    text="إضافة اشتراك جديد ➕",
-                    callback_data=f"add_sub_{user_id}",
-                ),
-            ],
-        ]
+
+        period = 0
+        if user.cur_sub:
+            chat = models.CodeChat.get(attr="code", val=user.cur_sub)
+            seconds = get_period_in_seconds(
+                context=context,
+                chat_id=chat.chat_id,
+                user_id=user_id,
+            )
+            period = calc_period(seconds)
+
+        keyboard = build_user_info_keyboard(user_id=user_id)
+        keyboard.append(back_to_admin_home_page_button[0])
         await update.callback_query.edit_message_text(
-            text=stringify_user(user),
+            text=stringify_user(user=user, period=period),
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
         return ConversationHandler.END
 
 
 back_to_user_info_handler = CallbackQueryHandler(
-    back_to_user_info, "^back_to_user_info$"
+    back_to_user_info, "^back_to_user_info"
 )
 
 show_user_handler = ConversationHandler(

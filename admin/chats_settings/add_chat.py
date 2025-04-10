@@ -15,15 +15,12 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
-from telegram.constants import ChatMemberStatus
 from admin.chats_settings.notify_none_members import notify_none_members_handler
-from common.common import build_admin_keyboard, reschedule_kick_user
 from admin.chats_settings.common import back_to_chats_settings
 from custom_filters import Admin
 import models
 from start import admin_command
 from common.constants import *
-import asyncio
 
 NEW_CHAT = range(1)
 
