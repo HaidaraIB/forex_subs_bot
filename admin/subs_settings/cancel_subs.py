@@ -45,6 +45,8 @@ async def get_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for user_id in user_ids:
             user = models.User.get_users(user_id=user_id)
             if user:
+                if not user.cur_sub or user.cur_sub == "Free":
+                    continue
                 user_names.append(
                     f"@{user.username}" if user.username else f"<b>{user.name}</b>"
                 )
@@ -123,7 +125,7 @@ async def confirm_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text="تمت العملية بنجاح ✅",
                 show_alert=True,
             )
-        
+
         await update.callback_query.delete_message()
 
         keyboard = build_subs_settings_keyboard()
