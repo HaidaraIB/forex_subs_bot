@@ -98,7 +98,7 @@ cancel_sub_handler = ConversationHandler(
     entry_points=[
         CallbackQueryHandler(
             cancel_sub,
-            "^cancel_sub",
+            "^cancel_sub_",
         ),
     ],
     states={

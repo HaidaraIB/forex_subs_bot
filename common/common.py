@@ -85,6 +85,10 @@ def build_admin_keyboard():
                 text="إعدادات التجربة المجانية 🆓",
                 callback_data="free_sub_settings",
             ),
+            InlineKeyboardButton(
+                text="إعدادات الاشتراكات 🗂",
+                callback_data="subs_settings",
+            ),
         ],
         [
             InlineKeyboardButton(

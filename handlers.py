@@ -27,6 +27,7 @@ from admin.statistics import *
 from admin.codes_settings import *
 from admin.free_sub_settings import *
 from admin.chats_settings import *
+from admin.subs_settings import *
 from models import create_tables
 
 from MyApp import MyApp
@@ -79,6 +80,9 @@ def main():
     app.add_handler(check_period_handler)
     app.add_handler(join_private_channel_handler)
     app.add_handler(free_sub_handler)
+
+    app.add_handler(cancel_subs_handler)
+    app.add_handler(subs_settings_handler)
 
     app.add_handler(add_sub_handler)
     app.add_handler(cancel_sub_handler)

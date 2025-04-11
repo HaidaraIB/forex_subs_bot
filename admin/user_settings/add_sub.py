@@ -211,7 +211,7 @@ add_sub_handler = ConversationHandler(
     entry_points=[
         CallbackQueryHandler(
             add_sub,
-            "^add_sub",
+            "^add_sub_",
         ),
     ],
     states={
