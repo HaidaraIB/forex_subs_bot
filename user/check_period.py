@@ -39,10 +39,13 @@ async def check_period(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.type == Chat.PRIVATE:
         user = models.User.get_users(user_id=update.effective_user.id)
         if user.cur_sub:
-            chat = models.CodeChat.get(attr="code", val=user.cur_sub)
+            if user.cur_sub == "Free":
+                chat_id = context.bot_data["free_sub_chats"][0]
+            else:
+                chat_id = models.CodeChat.get(attr="code", val=user.cur_sub).chat_id
             seconds = get_period_in_seconds(
                 context=context,
-                chat_id=chat.chat_id,
+                chat_id=chat_id,
                 user_id=update.effective_user.id,
             )
             store_button = InlineKeyboardMarkup.from_button(

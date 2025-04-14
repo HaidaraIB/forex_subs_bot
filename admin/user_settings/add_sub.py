@@ -6,6 +6,7 @@ from telegram import (
     KeyboardButtonRequestUsers,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    error,
 )
 from telegram.constants import ChatMemberStatus
 from telegram.ext import (
@@ -153,24 +154,31 @@ async def get_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 },
             )
             chat = await context.bot.get_chat(chat_id=chat.chat_id)
-            if link:
-                await context.bot.send_message(
-                    chat_id=user_id,
-                    text=text.format("تفعيل", chat.title),
-                    reply_markup=InlineKeyboardMarkup.from_button(
-                        InlineKeyboardButton(
-                            text="انضم الآن",
-                            url=link.invite_link,
-                        )
-                    ),
-                    disable_web_page_preview=True,
-                )
-            else:
-                await context.bot.send_message(
-                    chat_id=user_id,
-                    text=text.format("تجديد", chat.title),
-                    disable_web_page_preview=True,
-                )
+            try:
+                if link:
+                    await context.bot.send_message(
+                        chat_id=user_id,
+                        text=text.format("تفعيل", chat.title),
+                        reply_markup=InlineKeyboardMarkup.from_button(
+                            InlineKeyboardButton(
+                                text="انضم الآن",
+                                url=link.invite_link,
+                            )
+                        ),
+                        disable_web_page_preview=True,
+                    )
+                else:
+                    await context.bot.send_message(
+                        chat_id=user_id,
+                        text=text.format("تجديد", chat.title),
+                        disable_web_page_preview=True,
+                    )
+            except error.Forbidden as f:
+                if "bot was blocked by the user" in str(f):
+                    await context.bot.send_message(
+                        chat_id=update.effective_user.id,
+                        text="لقد قام هذا المستخدم بحظر البوت ❗️",
+                    )
 
         await models.Code.use(
             code=code.code,
