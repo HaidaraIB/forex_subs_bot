@@ -17,7 +17,7 @@ def get_period_in_seconds(
     if jobs:
         job = jobs[0]
         diff = job.next_t - datetime.datetime.now(TIMEZONE)
-        seconds = diff.total_seconds() - (2 * 24 * 60 * 60)
+        seconds = diff.total_seconds()
     return seconds
 
 

@@ -70,10 +70,13 @@ async def get_user_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         period = 0
         if user.cur_sub:
-            chat = models.CodeChat.get(attr="code", val=user.cur_sub)
+            if user.cur_sub == "Free":
+                chat_id = context.bot_data["free_sub_chats"][0]
+            else:
+                chat_id = models.CodeChat.get(attr="code", val=user.cur_sub).chat_id
             seconds = get_period_in_seconds(
                 context=context,
-                chat_id=chat.chat_id,
+                chat_id=chat_id,
                 user_id=user_id,
             )
             period = calc_period(seconds)
@@ -98,10 +101,13 @@ async def back_to_user_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         period = 0
         if user.cur_sub:
-            chat = models.CodeChat.get(attr="code", val=user.cur_sub)
+            if user.cur_sub == "Free":
+                chat_id = context.bot_data["free_sub_chats"][0]
+            else:
+                chat_id = models.CodeChat.get(attr="code", val=user.cur_sub).chat_id
             seconds = get_period_in_seconds(
                 context=context,
-                chat_id=chat.chat_id,
+                chat_id=chat_id,
                 user_id=user_id,
             )
             period = calc_period(seconds)
