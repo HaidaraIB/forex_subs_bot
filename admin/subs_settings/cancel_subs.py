@@ -137,8 +137,6 @@ async def confirm_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return ConversationHandler.END
 
-        return ConversationHandler.END
-
 
 cancel_subs_handler = ConversationHandler(
     entry_points=[

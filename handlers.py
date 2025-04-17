@@ -81,6 +81,7 @@ def main():
     app.add_handler(join_private_channel_handler)
     app.add_handler(free_sub_handler)
 
+    app.add_handler(add_subs_handler)
     app.add_handler(cancel_subs_handler)
     app.add_handler(subs_settings_handler)
 

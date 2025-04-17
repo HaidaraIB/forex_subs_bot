@@ -1,2 +1,3 @@
 from admin.subs_settings.subs_settings import subs_settings_handler
 from admin.subs_settings.cancel_subs import cancel_subs_handler
+from admin.subs_settings.add_subs import add_subs_handler
